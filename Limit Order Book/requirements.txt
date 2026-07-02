@@ -1,0 +1,5 @@
+# This project is a native C++20 application.
+# No Python packages are required.
+# Build requirements:
+# - GCC/Clang with C++20 support
+# - pthread support
