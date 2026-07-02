@@ -67,3 +67,16 @@ vcpkg_installed/
 # test output & cache
 Testing/
 .cache/
+
+# CMake build directories (Very Important)
+/[Bb]uild/
+/cmake-build-debug/
+/cmake-build-release/
+/CMakeCache.txt
+/CMakeFiles/
+/CMakeCheckOutputs/
+
+# IDE specific files
+.vscode/
+.idea/
+.DS_Store
