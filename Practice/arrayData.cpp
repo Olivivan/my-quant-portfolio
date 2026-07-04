@@ -1,3 +1,10 @@
+/*
+ARRAYS functionality in a simple C++ program.
+This program demonstrates the use of arrays in C++.
+It allows the user to input integers, stores them in an array,
+and then displays the double of each element in the array.
+*/
+
 #include <iostream>
 #include <array>
 

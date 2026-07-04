@@ -1,3 +1,7 @@
+/*
+This program calculates the average of three real numbers entered by the user.
+*/
+
 #include <iostream>
 
 using namespace std;

@@ -1,3 +1,12 @@
+/*
+WHILE LOOP and IF/ELSE IF/ ELSE functionality in a simple "Guess the Number" game implemented in C++.
+This program is a simple "Guess the Number" game implemented in C++.
+The user is prompted to guess a randomly generated number between 1 and 100.
+The program provides feedback on whether the guess is too high, too low, or correct.
+It also counts the number of guesses made by the user.
+After a correct guess, the user is given the option to play again or exit the game.
+*/
+
 #include <iostream>
 
 using namespace std;

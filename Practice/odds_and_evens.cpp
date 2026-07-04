@@ -1,3 +1,6 @@
+/*
+FOR LOOP functionality in a simple "Odds and Evens" game implemented in C++.
+*/
 #include <iostream>
 
 using namespace std;

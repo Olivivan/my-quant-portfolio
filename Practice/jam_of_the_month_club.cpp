@@ -1,3 +1,12 @@
+/*
+IF/ELSE IF/ELSE functionality in a simple "Jam of the Month Club" program implemented in C++.
+This program calculates the total cost for a customer based on their subscription package and 
+the number of jams, jellies, and preserves they purchased in a month.
+The user is prompted to input their package type (A, B, or C) and the quantity of jams purchased.
+The program then computes the total cost considering the monthly fee and any additional charges for
+jams beyond the included amount in their package.
+*/
+
 #include <iostream>
 #include <string>
 

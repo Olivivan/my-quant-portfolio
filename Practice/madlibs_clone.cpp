@@ -1,3 +1,10 @@
+/*
+STRINGS manipulation in a simple "Mad Libs" game implemented in C++.
+This program is a simple "Mad Libs" game implemented in C++.
+The user is prompted to input various words, such as adjectives, names, occupations,and hobbies
+to make a funny story.
+*/
+
 #include <iostream>
 #include <string>
 
