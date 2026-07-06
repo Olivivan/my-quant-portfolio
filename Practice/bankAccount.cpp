@@ -40,7 +40,15 @@ int main() {
     do {
 
         // Perform some operations on the account
-        cout << "What would you like to do? (1: Check Balance, 2: Deposit, 3: Withdraw, 4: Withdraw All, 5: Exit): ";
+        cout << "\n##########################" << endl;
+        cout << "What would you like to do? "<< endl;
+        cout << "##########################" << endl;
+        cout << "1: Check Balance " << endl;
+        cout << "2: Deposit" << endl;
+        cout << "3: Withdraw" << endl;
+        cout << "4: Withdraw All" << endl;
+        cout << "5: Exit" << endl;
+        cout << "##########################" << endl;
         cin >> choice;
 
         switch(choice) {
@@ -48,27 +56,37 @@ int main() {
                 cout << fixed << setprecision(2);
                 cout << "Current Balance: $" << account.getBalance() << endl;
                 cout << defaultfloat;
+                cout << "##########################" << endl;
                 break;
 
             case 2:
                 cout << "Enter deposit amount: ";
                 cin >> value;
-
                 account.deposit(value);
+                cout << fixed << setprecision(2);
+                cout << "Current Balance: $" << account.getBalance() << endl;
+                cout << defaultfloat;
+                cout << "##########################" << endl;
                 break;
 
             case 3:
                 cout << "Enter withdrawal amount: ";
                 cin >> value;
-                
                 account.withdraw(value);
+                cout << fixed << setprecision(2);
+                cout << "Current Balance: $" << account.getBalance() << endl;
+                cout << defaultfloat;
+                cout << "##########################" << endl;
                 break;
             
             case 4:
                 value = account.getBalance();
                 account.withdraw(value);
                 cout << "All funds withdrawn." << endl;
+                cout << fixed << setprecision(2);
                 cout << "Current Balance: $" << account.getBalance() << endl;
+                cout << defaultfloat;
+                cout << "##########################" << endl;
                 break;
 
             case 5:
