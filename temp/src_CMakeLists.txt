@@ -1,0 +1,9 @@
+# Define the main launcher executable
+add_executable(hft_main main.cpp)
+
+# Link the executable to our static libraries
+# This demonstrates the "composition" mentioned in the sources [5]
+target_link_libraries(hft_main PRIVATE hft_core_lib hft_render_lib)
+
+# Link to external dependencies (e.g., raylib) once they are added
+# target_link_libraries(hft_main PRIVATE raylib)

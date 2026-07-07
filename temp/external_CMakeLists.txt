@@ -1,0 +1,11 @@
+include(FetchContent)
+
+# Example: Automatically fetching a library (like Raylib or Catch2)
+# This is described in the sources as an "excellent" build system practice [1, 7]
+
+# FetchContent_Declare(
+#   raylib
+#   GIT_REPOSITORY https://github.com/raysan5/raylib.git
+#   GIT_TAG        5.0
+# )
+# FetchContent_MakeAvailable(raylib)

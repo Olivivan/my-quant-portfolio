@@ -1,0 +1,18 @@
+cmake_minimum_required(VERSION 3.10)
+project(HFT_Core)
+
+# Set C++ standard
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+# --- Modular Architecture ---
+# Adding subdirectories for our static libraries and the main executable.
+# This establishes a clear, scalable structure for a complex system.
+add_subdirectory(lib/hft_core_lib)
+add_subdirectory(lib/hft_render_lib)
+add_subdirectory(src)
+
+# --- The Working Directory Fix ---
+# This ensures built executables are placed in a predictable bin/ folder.
+# This also keeps runtime output organized for local builds.
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)

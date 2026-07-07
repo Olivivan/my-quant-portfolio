@@ -1,0 +1,40 @@
+# --- Build Artifacts ---
+# Ignore common CMake and C++ build outputs.
+build/
+bin/
+obj/
+out/
+
+# --- IDE Specific Files (VS Code) ---
+# Machine-specific settings should not be shared in a professional repo.
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+.history/
+*.code-workspace
+
+# --- Dependency Management ---
+# Ignore fetched or cached dependencies.
+_deps/
+external/cache/
+
+# --- Documentation ---
+# Ignore generated Doxygen output.
+docs/html/
+docs/latex/
+*.tmp
+
+# --- Compiled Files & Libraries ---
+*.exe
+*.out
+*.app
+*.a
+*.lib
+*.so
+*.dylib
+*.pdb
+
+# --- Operating System Files ---
+.DS_Store
+Thumbs.db
