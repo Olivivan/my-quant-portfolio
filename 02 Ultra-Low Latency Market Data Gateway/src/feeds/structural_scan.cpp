@@ -14,6 +14,14 @@ namespace {
     for (std::size_t field_index = 0; field_index < result.field_count; ++field_index) {
         const auto& field = result.fields[field_index];
         const auto key = payload.substr(field.key_offset, field.key_length);
+
+        if (const auto known_tag = lookup_feed_tag(key); known_tag.has_value()) {
+            const auto tag_index = static_cast<std::size_t>(*known_tag);
+            if (result.known_tag_slots[tag_index] == 0U) {
+                result.known_tag_slots[tag_index] = static_cast<std::uint8_t>(field_index + 1);
+            }
+        }
+
         std::size_t slot = static_cast<std::size_t>(structural_key_hash(key)) & mask;
 
         bool resolved = false;

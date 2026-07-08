@@ -12,6 +12,7 @@ Modular C++ project scaffold for building a high-performance market data gateway
 - PMR monotonic parse context for zero-allocation hot path parsing
 - SBE flyweight overlays for direct raw-buffer binary access
 - Alignment-aware SIMD paths using `std::assume_aligned` compiler hints
+- Consteval tag lookup tables replacing runtime switch/map dispatch
 - Baseline gateway orchestration and test harness
 
 ## Build
@@ -35,6 +36,7 @@ ctest --test-dir build --output-on-failure
 	  - Scalar kernel: portable fallback
 	  - PMR marker storage: `std::pmr::vector` on `std::pmr::monotonic_buffer_resource`
 	  - Structural index: precomputed hash slots for constant-time key lookup
+	  - Consteval tags: compile-time binary lookup arrays for known fields
 	- Stage 2: data access view (typed field lookup without reparsing)
 - `src/sbe`: binary encoding/decoding module
 	- Flyweight wrappers over packed SBE structs

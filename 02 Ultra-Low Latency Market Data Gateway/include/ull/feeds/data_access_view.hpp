@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ull/feeds/structural_scan.hpp"
+#include "ull/feeds/tag_lookup.hpp"
 
 #include <cstdint>
 #include <optional>
@@ -14,11 +15,15 @@ public:
 
     [[nodiscard]] bool valid() const noexcept;
     [[nodiscard]] std::optional<std::string_view> get_string(std::string_view key) const noexcept;
+    [[nodiscard]] std::optional<std::string_view> get_string(FeedTag tag) const noexcept;
     [[nodiscard]] std::optional<std::uint32_t> get_uint32(std::string_view key) const noexcept;
+    [[nodiscard]] std::optional<std::uint32_t> get_uint32(FeedTag tag) const noexcept;
     [[nodiscard]] std::optional<double> get_double(std::string_view key) const noexcept;
+    [[nodiscard]] std::optional<double> get_double(FeedTag tag) const noexcept;
 
 private:
     [[nodiscard]] std::optional<std::string_view> value_for(std::string_view key) const noexcept;
+    [[nodiscard]] std::optional<std::string_view> value_for(FeedTag tag) const noexcept;
 
     std::string_view payload_{};
     StructuralScanResult scan_{};

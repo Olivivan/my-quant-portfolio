@@ -1,5 +1,7 @@
 #pragma once
 
+#include "ull/feeds/tag_lookup.hpp"
+
 #include <array>
 #include <cstddef>
 #include <cstdint>
@@ -68,6 +70,7 @@ struct StructuralScanResult {
     std::size_t field_count{0};
     std::array<FieldSlice, max_fields> fields{};
     std::array<std::uint8_t, index_capacity> index_slots{};
+    std::array<std::uint8_t, feed_tag_count> known_tag_slots{};
 };
 
 class StructuralScanner {

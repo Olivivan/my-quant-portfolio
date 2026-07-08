@@ -1,6 +1,7 @@
 #include "ull/feeds/data_access_view.hpp"
 #include "ull/feeds/feed_handler.hpp"
 #include "ull/feeds/structural_scan.hpp"
+#include "ull/feeds/tag_lookup.hpp"
 
 #include <catch2/catch.hpp>
 #include <string>
@@ -109,6 +110,40 @@ TEST_CASE("Structural index preserves first occurrence for duplicate keys", "[fe
     const auto symbol = access.get_string("sym");
     REQUIRE(symbol.has_value());
     REQUIRE(*symbol == "FIRST");
+}
+
+TEST_CASE("Consteval feed tag table resolves known tags", "[feeds][tags]") {
+    constexpr auto sym = ull::feeds::lookup_feed_tag("sym");
+    constexpr auto px = ull::feeds::lookup_feed_tag("px");
+    constexpr auto unknown = ull::feeds::lookup_feed_tag("unknown_field");
+
+    static_assert(sym.has_value());
+    static_assert(px.has_value());
+    static_assert(!unknown.has_value());
+    static_assert(ull::feeds::feed_tag_name(ull::feeds::FeedTag::qty) == "qty");
+
+    REQUIRE(sym.has_value());
+    REQUIRE(*sym == ull::feeds::FeedTag::sym);
+    REQUIRE(px.has_value());
+    REQUIRE(*px == ull::feeds::FeedTag::px);
+    REQUIRE_FALSE(unknown.has_value());
+}
+
+TEST_CASE("Data access resolves known tags via direct slot arrays", "[feeds][tags]") {
+    const std::string payload = std::string{"sym=INTC"} + SOH + "px=52.75" + SOH + "qty=1200" + SOH + "venue=XNAS";
+
+    ull::feeds::StructuralScanner scanner;
+    const auto scan = scanner.scan(payload);
+    REQUIRE(scan.valid);
+
+    const ull::feeds::DataAccessView access(payload, scan);
+    REQUIRE(access.get_string(ull::feeds::FeedTag::sym) == std::optional<std::string_view>{"INTC"});
+    REQUIRE(access.get_string(ull::feeds::FeedTag::venue) == std::optional<std::string_view>{"XNAS"});
+
+    const auto price = access.get_double(ull::feeds::FeedTag::px);
+    REQUIRE(price.has_value());
+    REQUIRE(*price == Approx(52.75));
+    REQUIRE(access.get_uint32(ull::feeds::FeedTag::qty) == std::optional<std::uint32_t>{1200});
 }
 
 TEST_CASE("ParseContext can be reused across packets", "[feeds][pmr]") {
