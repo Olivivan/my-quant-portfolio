@@ -11,6 +11,7 @@ Modular C++ project scaffold for building a high-performance market data gateway
 - Structural index layout for O(1) field lookup in data access
 - PMR monotonic parse context for zero-allocation hot path parsing
 - SBE flyweight overlays for direct raw-buffer binary access
+- Alignment-aware SIMD paths using `std::assume_aligned` compiler hints
 - Baseline gateway orchestration and test harness
 
 ## Build
@@ -30,6 +31,7 @@ ctest --test-dir build --output-on-failure
 	- Stage 1: structural scanner with runtime feature detection and function-pointer dispatch
 	  - AVX-512 kernel: 64-byte cycle delimiter scan
 	  - AVX2 kernel: 32-byte cycle delimiter scan
+	  - Alignment hints: `std::assume_aligned` fast paths for aligned load instructions
 	  - Scalar kernel: portable fallback
 	  - PMR marker storage: `std::pmr::vector` on `std::pmr::monotonic_buffer_resource`
 	  - Structural index: precomputed hash slots for constant-time key lookup
