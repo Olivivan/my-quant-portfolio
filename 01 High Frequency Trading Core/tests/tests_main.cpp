@@ -150,6 +150,8 @@ TEST_CASE("Crossed Book Behavior", "[core][cross]") {
         REQUIRE(engine.GetSellBook().find(100.10) == engine.GetSellBook().end());
         REQUIRE(engine.GetSellBook().find(100.20) == engine.GetSellBook().end());
         REQUIRE(engine.GetSellBook().find(100.30) != engine.GetSellBook().end());
-        REQUIRE(engine.GetSellBook().at(100.30).front().quantity == 3);
+        REQUIRE(engine.GetSellBook().at(100.30).front().quantity == 4);
+        REQUIRE(engine.GetBuyBook().find(100.20) != engine.GetBuyBook().end());
+        REQUIRE(engine.GetBuyBook().at(100.20).front().quantity == 1);
     }
 }
