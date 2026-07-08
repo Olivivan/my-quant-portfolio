@@ -2,6 +2,7 @@ add_executable(ull_tests
     test_main.cpp
     test_spsc_ring_buffer.cpp
     test_market_data_gateway.cpp
+    test_two_stage_parsing.cpp
 )
 
 target_link_libraries(ull_tests

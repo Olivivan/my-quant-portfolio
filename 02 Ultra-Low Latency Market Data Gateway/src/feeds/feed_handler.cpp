@@ -3,7 +3,17 @@
 namespace ull::feeds {
 
 bool FeedHandler::on_packet(std::string_view payload) noexcept {
-    return !payload.empty();
+    const auto scan = scanner_.scan(payload);
+    if (!scan.valid) {
+        return false;
+    }
+
+    const DataAccessView access(payload, scan);
+    const auto symbol = access.get_string("sym");
+    const auto price = access.get_double("px");
+    const auto quantity = access.get_uint32("qty");
+
+    return symbol.has_value() && !symbol->empty() && price.has_value() && quantity.has_value() && *quantity > 0U;
 }
 
 } // namespace ull::feeds

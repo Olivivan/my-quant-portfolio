@@ -1,5 +1,7 @@
 add_library(ull_feeds STATIC
     feed_handler.cpp
+    structural_scan.cpp
+    data_access_view.cpp
 )
 
 target_include_directories(ull_feeds
