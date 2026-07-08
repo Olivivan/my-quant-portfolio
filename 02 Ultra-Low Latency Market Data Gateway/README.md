@@ -15,44 +15,44 @@ A deterministic, low-jitter, C++20 market data ingress engine built for high-fre
 
 ```mermaid
 flowchart LR
-	NIC[Exchange NIC RX] --> TS[Hardware Timestamping]
-	TS --> KB[Kernel Bypass ef_vi/Onload]
-	TS --> UDP[UDP Socket RX]
+    NIC[Exchange NIC RX] --> TS[Hardware Timestamping]
+    TS --> KB[Kernel Bypass ef_vi/Onload]
+    TS --> UDP[UDP Socket RX]
 
-	KB --> PARSE
-	UDP --> PARSE
+    KB --> PARSE
+    UDP --> PARSE
 
-	subgraph PARSE[Two-Stage Parsing]
-		S1[Stage 1 Structural Scan\nAVX-512/AVX2/Scalar]
-		S2[Stage 2 Data Access\nO(1) Indexed Tags]
-		S1 --> S2
-	end
+    subgraph PARSE[Two-Stage Parsing]
+        S1[Stage 1 Structural Scan\nAVX-512/AVX2/Scalar]
+        S2[Stage 2 Data Access\nO(1) Indexed Tags]
+        S1 --> S2
+    end
 
-	S2 --> ROUTE[Compile-Time Hash Router\nFNV-1a Jump Table]
-	ROUTE --> HOT[Hot Path Outputs]
-	ROUTE --> DEFER[Lock-Free MPSC Deferred Queue]
-	DEFER --> BG[Background Logging/Persistence]
+    S2 --> ROUTE[Compile-Time Hash Router\nFNV-1a Jump Table]
+    ROUTE --> HOT[Hot Path Outputs]
+    ROUTE --> DEFER[Lock-Free MPSC Deferred Queue]
+    DEFER --> BG[Background Logging/Persistence]
 
-	PIN[Thread Pinning + NUMA Locality] -.controls.-> PARSE
-	PIN -.controls.-> ROUTE
+    PIN[Thread Pinning + NUMA Locality] -.controls.-> PARSE
+    PIN -.controls.-> ROUTE
 ```
 
 ### Performance waterfall (target shape)
 
 ```mermaid
 gantt
-	title Latency Waterfall (ns) - Per Message Budget
-	dateFormat  X
-	axisFormat %L
-	section Critical Path
-	NIC ingress + timestamp          :a1, 0, 80
-	Kernel bypass / socket receive   :a2, after a1, 100
-	Structural scan (SIMD)           :a3, after a2, 150
-	Data access + tag lookup         :a4, after a3, 70
-	Message routing                  :a5, after a4, 40
-	section Deferred Path
-	MPSC enqueue deferred task       :b1, 0, 20
-	Background persistence/logging   :b2, after b1, 400
+    title Latency Waterfall (ns) - Per Message Budget
+    dateFormat  X
+    axisFormat %L
+    section Critical Path
+    NIC ingress + timestamp          :a1, 0, 80
+    Kernel bypass / socket receive   :a2, after a1, 100
+    Structural scan (SIMD)           :a3, after a2, 150
+    Data access + tag lookup         :a4, after a3, 70
+    Message routing                  :a5, after a4, 40
+    section Deferred Path
+    MPSC enqueue deferred task       :b1, 0, 20
+    Background persistence/logging   :b2, after b1, 400
 ```
 
 ## Key Capabilities

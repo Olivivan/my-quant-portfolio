@@ -6,6 +6,12 @@
 #include <optional>
 #include <string_view>
 
+#if defined(__cpp_consteval) && (__cpp_consteval >= 201811L)
+#define ULL_CONSTEVAL consteval
+#else
+#define ULL_CONSTEVAL constexpr
+#endif
+
 namespace ull::feeds {
 
 enum class FeedTag : std::uint8_t {
@@ -25,7 +31,7 @@ struct TagLookupEntry {
 };
 
 template <std::size_t N>
-consteval std::array<TagLookupEntry, N> build_sorted_tag_table(std::array<TagLookupEntry, N> entries) {
+ULL_CONSTEVAL std::array<TagLookupEntry, N> build_sorted_tag_table(std::array<TagLookupEntry, N> entries) {
     for (std::size_t i = 1; i < N; ++i) {
         auto current = entries[i];
         std::size_t j = i;
@@ -86,3 +92,5 @@ inline constexpr std::array<std::string_view, feed_tag_count> feed_tag_names = {
 }
 
 } // namespace ull::feeds
+
+#undef ULL_CONSTEVAL

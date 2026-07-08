@@ -3,12 +3,18 @@
 #include <cstdint>
 #include <string_view>
 
+#if defined(__cpp_consteval) && (__cpp_consteval >= 201811L)
+#define ULL_CONSTEVAL consteval
+#else
+#define ULL_CONSTEVAL constexpr
+#endif
+
 namespace ull::common {
 
 inline constexpr std::uint64_t fnv1a_offset_basis_64 = 14695981039346656037ULL;
 inline constexpr std::uint64_t fnv1a_prime_64 = 1099511628211ULL;
 
-consteval std::uint64_t fnv1a_64_literal(const char* text, std::size_t len) {
+ULL_CONSTEVAL std::uint64_t fnv1a_64_literal(const char* text, std::size_t len) {
     std::uint64_t hash = fnv1a_offset_basis_64;
     for (std::size_t i = 0; i < len; ++i) {
         hash ^= static_cast<std::uint64_t>(static_cast<unsigned char>(text[i]));
@@ -29,3 +35,5 @@ constexpr std::uint64_t fnv1a_64(std::string_view text) noexcept {
 }
 
 } // namespace ull::common
+
+#undef ULL_CONSTEVAL
