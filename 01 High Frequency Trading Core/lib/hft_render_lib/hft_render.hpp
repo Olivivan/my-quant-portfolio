@@ -2,7 +2,9 @@
 
 #include <string>
 
+using namespace std;
+
 namespace HFTRender {
     inline void RenderMarketData() {}
-    inline void LogMetric(const std::string&) {}
+    inline void LogMetric(const string&) {}
 }

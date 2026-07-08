@@ -7,6 +7,8 @@
 #include <string>
 #include <vector>
 
+using namespace std;
+
 namespace mini_catch {
     using TestFn = void (*)();
 
@@ -15,8 +17,8 @@ namespace mini_catch {
         TestFn fn;
     };
 
-    inline std::vector<TestCase>& Registry() {
-        static std::vector<TestCase> tests;
+    inline vector<TestCase>& Registry() {
+        static vector<TestCase> tests;
         return tests;
     }
 
@@ -31,17 +33,17 @@ namespace mini_catch {
         for (const auto& test : Registry()) {
             try {
                 test.fn();
-                std::cout << "[PASS] " << test.name << '\n';
-            } catch (const std::exception& ex) {
+                cout << "[PASS] " << test.name << '\n';
+            } catch (const exception& ex) {
                 ++failures;
-                std::cout << "[FAIL] " << test.name << ": " << ex.what() << '\n';
+                cout << "[FAIL] " << test.name << ": " << ex.what() << '\n';
             } catch (...) {
                 ++failures;
-                std::cout << "[FAIL] " << test.name << ": unknown exception" << '\n';
+                cout << "[FAIL] " << test.name << ": unknown exception" << '\n';
             }
         }
 
-        std::cout << "\nExecuted " << Registry().size() << " test case(s). Failures: " << failures << '\n';
+        cout << "\nExecuted " << Registry().size() << " test case(s). Failures: " << failures << '\n';
         return failures == 0 ? 0 : 1;
     }
 }
@@ -59,7 +61,7 @@ namespace mini_catch {
 #define REQUIRE(expr) \
     do { \
         if (!(expr)) { \
-            throw std::runtime_error(std::string("REQUIRE failed: ") + #expr); \
+            throw runtime_error(string("REQUIRE failed: ") + #expr); \
         } \
     } while (false)
 

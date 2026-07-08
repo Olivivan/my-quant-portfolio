@@ -1,6 +1,8 @@
 #include <catch2/catch_test_macros.hpp>
 #include "../lib/hft_core_lib/hft_core.hpp"
 
+using namespace std;
+
 TEST_CASE("Price-Time Priority Logic", "[core][matching]") {
     HFT::HFTCore engine;
 

@@ -2,6 +2,8 @@
 #include "../lib/hft_core_lib/hft_core.hpp"
 #include "../lib/hft_render_lib/hft_render.hpp"
 
+using namespace std;
+
 // Professional State Machine as recommended
 enum class AppState { Initializing, Trading, Error, Shutdown };
 

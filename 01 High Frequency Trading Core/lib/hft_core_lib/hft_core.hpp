@@ -5,6 +5,8 @@
 #include <list>
 #include <map>
 
+using namespace std;
+
 namespace HFT {
     struct Order {
         uint64_t id;
@@ -36,18 +38,18 @@ namespace HFT {
             }
         }
 
-        const std::map<double, std::list<Order>, std::greater<double>>& GetBuyBook() const {
+        const map<double, list<Order>, greater<double>>& GetBuyBook() const {
             return m_BuyBook;
         }
 
-        const std::map<double, std::list<Order>>& GetSellBook() const {
+        const map<double, list<Order>>& GetSellBook() const {
             return m_SellBook;
         }
 
     private:
         // Price-Time Priority: Map keys handle Price, List handles Time
-        std::map<double, std::list<Order>, std::greater<double>> m_BuyBook;
-        std::map<double, std::list<Order>> m_SellBook;
+        map<double, list<Order>, greater<double>> m_BuyBook;
+        map<double, list<Order>> m_SellBook;
 
         void MatchIncomingBuy(Order& incoming) {
             while (incoming.quantity > 0 && !m_SellBook.empty()) {
