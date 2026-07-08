@@ -1,0 +1,23 @@
+# HFT Core bootstrap requirements (Python-installable tooling).
+#
+# Install command:
+#   python -m pip install -r requirements.txt
+#
+# Required software outside pip (must be installed separately):
+# - Python 3.10+
+# - C++17 compiler toolchain (MSVC Build Tools, clang, or gcc)
+# - Git (required because Catch2 is pulled via CMake FetchContent from GitHub)
+#
+# Third-party C++ libraries used by this repo:
+# - Catch2 (tests): fetched automatically by CMake from source
+# - pybind11 (Python bridge): provided by this requirements file
+#
+# Minimum hardware power (for local build/test and Python bridge):
+# - CPU: 2 physical cores (4 threads recommended)
+# - RAM: 8 GB minimum (16 GB recommended)
+# - Disk: 5 GB free (10 GB recommended for build caches)
+
+cmake>=3.16
+ninja>=1.11
+pybind11>=2.12
+conan>=2.0

@@ -28,12 +28,12 @@ namespace HFT {
             if (order.isBuy) {
                 MatchIncomingBuy(order);
                 if (order.quantity > 0) {
-                    m_BuyBook[order.price].push_back(order);
+                    InsertRestingOrder(m_BuyBook, order);
                 }
             } else {
                 MatchIncomingSell(order);
                 if (order.quantity > 0) {
-                    m_SellBook[order.price].push_back(order);
+                    InsertRestingOrder(m_SellBook, order);
                 }
             }
         }
@@ -50,6 +50,18 @@ namespace HFT {
         // Price-Time Priority: Map keys handle Price, List handles Time
         map<double, list<Order>, greater<double>> m_BuyBook;
         map<double, list<Order>> m_SellBook;
+
+        template <typename BookType>
+        void InsertRestingOrder(BookType& book, const Order& order) {
+            auto& ordersAtPrice = book[order.price];
+
+            // Keep FIFO for equal timestamp while allowing out-of-order ingestion.
+            auto it = ordersAtPrice.begin();
+            while (it != ordersAtPrice.end() && it->timestamp <= order.timestamp) {
+                ++it;
+            }
+            ordersAtPrice.insert(it, order);
+        }
 
         void MatchIncomingBuy(Order& incoming) {
             while (incoming.quantity > 0 && !m_SellBook.empty()) {

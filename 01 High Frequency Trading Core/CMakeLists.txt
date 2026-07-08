@@ -7,8 +7,13 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
 enable_testing()
+option(HFT_BUILD_PYTHON_BRIDGE "Build Python bindings (pybind11 module)" OFF)
 
 add_subdirectory(lib/hft_core_lib)
 add_subdirectory(lib/hft_render_lib)
 add_subdirectory(src)
 add_subdirectory(tests)
+
+if(HFT_BUILD_PYTHON_BRIDGE)
+	add_subdirectory(python_bridge)
+endif()
