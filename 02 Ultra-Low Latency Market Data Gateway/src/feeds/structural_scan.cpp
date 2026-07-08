@@ -1,127 +1,97 @@
 #include "ull/feeds/structural_scan.hpp"
 
-#include <bit>
-#include <cstdint>
+#include "structural_scan_context.hpp"
 
-#if defined(__AVX2__)
-#include <immintrin.h>
+#include <intrin.h>
+
+namespace ull::feeds::detail {
+
+namespace {
+
+[[nodiscard]] bool supports_avx2_runtime() noexcept {
+    int cpuid[4]{};
+    __cpuidex(cpuid, 1, 0);
+
+    const bool osxsave = (cpuid[2] & (1 << 27)) != 0;
+    const bool avx = (cpuid[2] & (1 << 28)) != 0;
+    if (!osxsave || !avx) {
+        return false;
+    }
+
+    const unsigned __int64 xcr0 = _xgetbv(0);
+    if ((xcr0 & 0x6) != 0x6) {
+        return false;
+    }
+
+    __cpuidex(cpuid, 7, 0);
+    return (cpuid[1] & (1 << 5)) != 0;
+}
+
+[[nodiscard]] bool supports_avx512_runtime() noexcept {
+    int cpuid[4]{};
+    __cpuidex(cpuid, 1, 0);
+
+    const bool osxsave = (cpuid[2] & (1 << 27)) != 0;
+    if (!osxsave) {
+        return false;
+    }
+
+    const unsigned __int64 xcr0 = _xgetbv(0);
+    const unsigned __int64 required = 0xE6;
+    if ((xcr0 & required) != required) {
+        return false;
+    }
+
+    __cpuidex(cpuid, 7, 0);
+    const bool avx512f = (cpuid[1] & (1 << 16)) != 0;
+    const bool avx512bw = (cpuid[1] & (1 << 30)) != 0;
+    return avx512f && avx512bw;
+}
+
+[[nodiscard]] ScanKernel resolve_scan_kernel() noexcept {
+#if defined(ULL_HAS_AVX512_SCANNER)
+    if (supports_avx512_runtime()) {
+        return &scan_structural_avx512;
+    }
 #endif
+
+#if defined(ULL_HAS_AVX2_SCANNER)
+    if (supports_avx2_runtime()) {
+        return &scan_structural_avx2;
+    }
+#endif
+
+    return &scan_structural_scalar;
+}
+
+[[nodiscard]] ScanKernel get_scan_kernel() noexcept {
+    static const ScanKernel kernel = resolve_scan_kernel();
+    return kernel;
+}
+
+} // namespace
+
+} // namespace ull::feeds::detail
 
 namespace ull::feeds {
 
 StructuralScanResult StructuralScanner::scan(std::string_view payload) const noexcept {
-    StructuralScanResult result{};
+    detail::ScanContext context{};
     if (payload.empty()) {
-        return result;
+        return context.result;
     }
 
-    constexpr char soh_delimiter = '\x01';
-    constexpr char key_value_delimiter = '=';
-
-    std::size_t field_start = 0;
-    std::size_t value_separator = std::string_view::npos;
-
-    const auto append_field = [&](std::size_t segment_end) noexcept -> bool {
-        if (result.field_count >= StructuralScanResult::max_fields) {
-            return false;
-        }
-
-        if (value_separator == std::string_view::npos) {
-            return false;
-        }
-
-        if (value_separator == field_start || value_separator + 1 >= segment_end) {
-            return false;
-        }
-
-        result.fields[result.field_count++] = FieldSlice{
-            field_start,
-            value_separator - field_start,
-            value_separator + 1,
-            segment_end - (value_separator + 1)};
-
-        field_start = segment_end + 1;
-        value_separator = std::string_view::npos;
-        return true;
-    };
-
-    const auto on_structural_char = [&](std::size_t position, char ch) noexcept -> bool {
-        if (ch == key_value_delimiter) {
-            if (value_separator != std::string_view::npos || position == field_start) {
-                return false;
-            }
-
-            value_separator = position;
-            return true;
-        }
-
-        if (position == field_start) {
-            return false;
-        }
-
-        return append_field(position);
-    };
-
-#if defined(__AVX2__)
-    const auto* bytes = reinterpret_cast<const unsigned char*>(payload.data());
-    const auto eq = _mm256_set1_epi8(static_cast<char>(key_value_delimiter));
-    const auto soh = _mm256_set1_epi8(static_cast<char>(soh_delimiter));
-
-    std::size_t offset = 0;
-    const std::size_t simd_limit = payload.size() - (payload.size() % 32);
-
-    while (offset < simd_limit) {
-        const auto block = _mm256_loadu_si256(reinterpret_cast<const __m256i*>(bytes + offset));
-        const auto eq_mask = static_cast<std::uint32_t>(_mm256_movemask_epi8(_mm256_cmpeq_epi8(block, eq)));
-        const auto soh_mask = static_cast<std::uint32_t>(_mm256_movemask_epi8(_mm256_cmpeq_epi8(block, soh)));
-
-        std::uint32_t mask = eq_mask | soh_mask;
-        while (mask != 0U) {
-            const std::uint32_t bit = std::countr_zero(mask);
-            const std::uint32_t bit_flag = (1U << bit);
-            const char marker = ((eq_mask & bit_flag) != 0U) ? key_value_delimiter : soh_delimiter;
-
-            if (!on_structural_char(offset + bit, marker)) {
-                return result;
-            }
-
-            mask &= ~bit_flag;
-        }
-
-        offset += 32;
+    detail::get_scan_kernel()(payload, context);
+    if (context.failed) {
+        return context.result;
     }
 
-    while (offset < payload.size()) {
-        const char ch = payload[offset];
-        if (ch == key_value_delimiter || ch == soh_delimiter) {
-            if (!on_structural_char(offset, ch)) {
-                return result;
-            }
-        }
-
-        ++offset;
-    }
-#else
-    for (std::size_t i = 0; i < payload.size(); ++i) {
-        const char ch = payload[i];
-        if (ch == key_value_delimiter || ch == soh_delimiter) {
-            if (!on_structural_char(i, ch)) {
-                return result;
-            }
-        }
-    }
-#endif
-
-    if (field_start == payload.size()) {
-        return result;
+    if (!detail::finalize_scan(context, payload.size())) {
+        return context.result;
     }
 
-    if (!append_field(payload.size())) {
-        return result;
-    }
-
-    result.valid = (result.field_count > 0);
-    return result;
+    context.result.valid = (context.result.field_count > 0);
+    return context.result;
 }
 
 } // namespace ull::feeds

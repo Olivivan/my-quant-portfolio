@@ -3,6 +3,7 @@
 #include "ull/feeds/structural_scan.hpp"
 
 #include <catch2/catch.hpp>
+#include <string>
 
 namespace {
 
@@ -59,4 +60,24 @@ TEST_CASE("Structural scanner rejects trailing SOH delimiter", "[feeds][scan]") 
     const auto scan = scanner.scan(payload);
 
     REQUIRE_FALSE(scan.valid);
+}
+
+TEST_CASE("Structural scanner handles payload across 64-byte blocks", "[feeds][scan]") {
+    std::string payload;
+    payload.reserve(256);
+    payload += "sym=LONGSYMBOL1234";
+    payload += SOH;
+    payload += "px=12345.6789";
+    payload += SOH;
+    payload += "qty=999999";
+    payload += SOH;
+    payload += "venue=XNYS";
+    payload += SOH;
+    payload += "seq=184467";
+
+    ull::feeds::StructuralScanner scanner;
+    const auto scan = scanner.scan(payload);
+
+    REQUIRE(scan.valid);
+    REQUIRE(scan.field_count == 5);
 }
