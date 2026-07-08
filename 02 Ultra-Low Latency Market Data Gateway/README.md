@@ -15,25 +15,25 @@ A deterministic, low-jitter, C++20 market data ingress engine built for high-fre
 
 ```mermaid
 flowchart LR
-    NIC[Exchange NIC RX] --> TS[Hardware Timestamping]
-    TS --> KB[Kernel Bypass ef_vi/Onload]
-    TS --> UDP[UDP Socket RX]
+    NIC["Exchange NIC RX"] --> TS["Hardware Timestamping"]
+    TS --> KB["Kernel Bypass ef_vi/Onload"]
+    TS --> UDP["UDP Socket RX"]
 
     KB --> PARSE
     UDP --> PARSE
 
-    subgraph PARSE[Two-Stage Parsing]
-        S1[Stage 1 Structural Scan\nAVX-512/AVX2/Scalar]
-        S2[Stage 2 Data Access\nO(1) Indexed Tags]
+    subgraph PARSE["Two-Stage Parsing"]
+        S1["Stage 1 Structural Scan<br/>AVX-512/AVX2/Scalar"]
+        S2["Stage 2 Data Access<br/>O(1) Indexed Tags"]
         S1 --> S2
     end
 
-    S2 --> ROUTE[Compile-Time Hash Router\nFNV-1a Jump Table]
-    ROUTE --> HOT[Hot Path Outputs]
-    ROUTE --> DEFER[Lock-Free MPSC Deferred Queue]
-    DEFER --> BG[Background Logging/Persistence]
+    S2 --> ROUTE["Compile-Time Hash Router<br/>FNV-1a Jump Table"]
+    ROUTE --> HOT["Hot Path Outputs"]
+    ROUTE --> DEFER["Lock-Free MPSC Deferred Queue"]
+    DEFER --> BG["Background Logging/Persistence"]
 
-    PIN[Thread Pinning + NUMA Locality] -.controls.-> PARSE
+    PIN["Thread Pinning + NUMA Locality"] -.controls.-> PARSE
     PIN -.controls.-> ROUTE
 ```
 
