@@ -16,7 +16,7 @@ void scan_structural_avx512(std::string_view payload, ScanContext& context) noex
     const std::size_t simd_limit = payload.size() - (payload.size() % 64);
     const bool base_aligned = (reinterpret_cast<std::uintptr_t>(bytes) % 64U) == 0U;
 
-    if (base_aligned) {
+    if (base_aligned) [[likely]] {
         const auto* aligned_bytes = std::assume_aligned<64>(bytes);
         while (offset < simd_limit) {
             const auto block = _mm512_load_si512(reinterpret_cast<const void*>(aligned_bytes + offset));
@@ -29,8 +29,7 @@ void scan_structural_avx512(std::string_view payload, ScanContext& context) noex
                 const std::uint64_t bit_flag = (1ULL << bit);
                 const char marker = ((eq_mask & bit_flag) != 0U) ? key_value_delimiter : soh_delimiter;
 
-                if (!append_structural_marker(context, offset + static_cast<std::size_t>(bit), marker)) {
-                    context.failed = true;
+                if (!append_marker_or_fail(context, offset + static_cast<std::size_t>(bit), marker)) {
                     return;
                 }
 
@@ -51,8 +50,7 @@ void scan_structural_avx512(std::string_view payload, ScanContext& context) noex
                 const std::uint64_t bit_flag = (1ULL << bit);
                 const char marker = ((eq_mask & bit_flag) != 0U) ? key_value_delimiter : soh_delimiter;
 
-                if (!append_structural_marker(context, offset + static_cast<std::size_t>(bit), marker)) {
-                    context.failed = true;
+                if (!append_marker_or_fail(context, offset + static_cast<std::size_t>(bit), marker)) {
                     return;
                 }
 
@@ -65,9 +63,8 @@ void scan_structural_avx512(std::string_view payload, ScanContext& context) noex
 
     while (offset < payload.size()) {
         const char ch = payload[offset];
-        if (ch == key_value_delimiter || ch == soh_delimiter) {
-            if (!append_structural_marker(context, offset, ch)) {
-                context.failed = true;
+        if (ch == key_value_delimiter || ch == soh_delimiter) [[unlikely]] {
+            if (!append_marker_or_fail(context, offset, ch)) {
                 return;
             }
         }

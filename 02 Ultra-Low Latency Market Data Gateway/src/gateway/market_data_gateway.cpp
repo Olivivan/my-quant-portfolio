@@ -20,18 +20,35 @@ MessageType MarketDataGateway::route_message_type(std::string_view message_type)
     MessageType routed_type = MessageType::unknown;
     switch (hash) {
     case quote_hash:
-        routed_type = (message_type == "QUOTE") ? MessageType::quote : MessageType::unknown;
+        if (message_type == "QUOTE") [[likely]] {
+            routed_type = MessageType::quote;
+        } else [[unlikely]] {
+            routed_type = MessageType::unknown;
+        }
         break;
     case trade_hash:
-        routed_type = (message_type == "TRADE") ? MessageType::trade : MessageType::unknown;
+        if (message_type == "TRADE") [[likely]] {
+            routed_type = MessageType::trade;
+        } else [[unlikely]] {
+            routed_type = MessageType::unknown;
+        }
         break;
     case book_update_hash:
-        routed_type = (message_type == "BOOK_UPDATE") ? MessageType::book_update : MessageType::unknown;
+        if (message_type == "BOOK_UPDATE") [[likely]] {
+            routed_type = MessageType::book_update;
+        } else [[unlikely]] {
+            routed_type = MessageType::unknown;
+        }
         break;
     case heartbeat_hash:
-        routed_type = (message_type == "HEARTBEAT") ? MessageType::heartbeat : MessageType::unknown;
+        if (message_type == "HEARTBEAT") [[likely]] {
+            routed_type = MessageType::heartbeat;
+        } else [[unlikely]] {
+            routed_type = MessageType::unknown;
+        }
         break;
     default:
+        [[unlikely]]
         routed_type = MessageType::unknown;
         break;
     }

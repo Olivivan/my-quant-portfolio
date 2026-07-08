@@ -14,6 +14,7 @@ Modular C++ project scaffold for building a high-performance market data gateway
 - Alignment-aware SIMD paths using `std::assume_aligned` compiler hints
 - Consteval tag lookup tables replacing runtime switch/map dispatch
 - Compile-time FNV-1a hashing for O(1) message type routing jump tables
+- Slowpath removal and branch reduction using `[[likely]]`/`[[unlikely]]`
 - Baseline gateway orchestration and test harness
 
 ## Build
@@ -38,6 +39,7 @@ ctest --test-dir build --output-on-failure
 	  - PMR marker storage: `std::pmr::vector` on `std::pmr::monotonic_buffer_resource`
 	  - Structural index: precomputed hash slots for constant-time key lookup
 	  - Consteval tags: compile-time binary lookup arrays for known fields
+	  - Branch hints on hot loops with extracted slowpath error handlers
 	- Stage 2: data access view (typed field lookup without reparsing)
 - `src/sbe`: binary encoding/decoding module
 	- Flyweight wrappers over packed SBE structs

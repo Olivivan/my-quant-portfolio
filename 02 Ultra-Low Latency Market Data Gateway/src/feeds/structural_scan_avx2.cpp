@@ -16,7 +16,7 @@ void scan_structural_avx2(std::string_view payload, ScanContext& context) noexce
     const std::size_t simd_limit = payload.size() - (payload.size() % 32);
     const bool base_aligned = (reinterpret_cast<std::uintptr_t>(bytes) % 32U) == 0U;
 
-    if (base_aligned) {
+    if (base_aligned) [[likely]] {
         const auto* aligned_bytes = std::assume_aligned<32>(bytes);
         while (offset < simd_limit) {
             const auto block = _mm256_load_si256(reinterpret_cast<const __m256i*>(aligned_bytes + offset));
@@ -29,8 +29,7 @@ void scan_structural_avx2(std::string_view payload, ScanContext& context) noexce
                 const std::uint32_t bit_flag = (1U << bit);
                 const char marker = ((eq_mask & bit_flag) != 0U) ? key_value_delimiter : soh_delimiter;
 
-                if (!append_structural_marker(context, offset + bit, marker)) {
-                    context.failed = true;
+                if (!append_marker_or_fail(context, offset + bit, marker)) {
                     return;
                 }
 
@@ -51,8 +50,7 @@ void scan_structural_avx2(std::string_view payload, ScanContext& context) noexce
                 const std::uint32_t bit_flag = (1U << bit);
                 const char marker = ((eq_mask & bit_flag) != 0U) ? key_value_delimiter : soh_delimiter;
 
-                if (!append_structural_marker(context, offset + bit, marker)) {
-                    context.failed = true;
+                if (!append_marker_or_fail(context, offset + bit, marker)) {
                     return;
                 }
 
@@ -65,9 +63,8 @@ void scan_structural_avx2(std::string_view payload, ScanContext& context) noexce
 
     while (offset < payload.size()) {
         const char ch = payload[offset];
-        if (ch == key_value_delimiter || ch == soh_delimiter) {
-            if (!append_structural_marker(context, offset, ch)) {
-                context.failed = true;
+        if (ch == key_value_delimiter || ch == soh_delimiter) [[unlikely]] {
+            if (!append_marker_or_fail(context, offset, ch)) {
                 return;
             }
         }

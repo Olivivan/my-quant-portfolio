@@ -20,6 +20,11 @@ struct ScanContext {
 
 using ScanKernel = void (*)(std::string_view payload, ScanContext& context) noexcept;
 
+[[nodiscard]] inline bool fail_scan(ScanContext& context) noexcept {
+    context.failed = true;
+    return false;
+}
+
 inline void initialize_scan_context(ScanContext& context, ParseContext& parse_context) noexcept {
     context.parse_context = &parse_context;
     context.parse_context->reset();
@@ -29,12 +34,12 @@ inline void initialize_scan_context(ScanContext& context, ParseContext& parse_co
 }
 
 inline bool append_structural_marker(ScanContext& context, std::size_t position, char marker) noexcept {
-    if (context.parse_context == nullptr) {
+    if (context.parse_context == nullptr) [[unlikely]] {
         return false;
     }
 
     auto& markers = context.parse_context->markers();
-    if (markers.size() >= ParseContext::max_structural_markers) {
+    if (markers.size() >= ParseContext::max_structural_markers) [[unlikely]] {
         return false;
     }
 
@@ -43,15 +48,15 @@ inline bool append_structural_marker(ScanContext& context, std::size_t position,
 }
 
 inline bool append_field(ScanContext& context, std::size_t segment_end) noexcept {
-    if (context.result.field_count >= StructuralScanResult::max_fields) {
+    if (context.result.field_count >= StructuralScanResult::max_fields) [[unlikely]] {
         return false;
     }
 
-    if (context.value_separator == std::string_view::npos) {
+    if (context.value_separator == std::string_view::npos) [[unlikely]] {
         return false;
     }
 
-    if (context.value_separator == context.field_start || context.value_separator + 1 >= segment_end) {
+    if (context.value_separator == context.field_start || context.value_separator + 1 >= segment_end) [[unlikely]] {
         return false;
     }
 
@@ -68,7 +73,7 @@ inline bool append_field(ScanContext& context, std::size_t segment_end) noexcept
 
 inline bool process_marker(ScanContext& context, std::size_t position, char marker) noexcept {
     if (marker == key_value_delimiter) {
-        if (context.value_separator != std::string_view::npos || position == context.field_start) {
+        if (context.value_separator != std::string_view::npos || position == context.field_start) [[unlikely]] {
             return false;
         }
 
@@ -76,7 +81,7 @@ inline bool process_marker(ScanContext& context, std::size_t position, char mark
         return true;
     }
 
-    if (position == context.field_start) {
+    if (position == context.field_start) [[unlikely]] {
         return false;
     }
 
@@ -84,11 +89,19 @@ inline bool process_marker(ScanContext& context, std::size_t position, char mark
 }
 
 inline bool finalize_scan(ScanContext& context, std::size_t payload_size) noexcept {
-    if (context.field_start == payload_size) {
+    if (context.field_start == payload_size) [[unlikely]] {
         return false;
     }
 
     return append_field(context, payload_size);
+}
+
+inline bool append_marker_or_fail(ScanContext& context, std::size_t position, char marker) noexcept {
+    if (append_structural_marker(context, position, marker)) [[likely]] {
+        return true;
+    }
+
+    return fail_scan(context);
 }
 
 void scan_structural_scalar(std::string_view payload, ScanContext& context) noexcept;
