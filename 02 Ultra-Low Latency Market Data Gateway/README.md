@@ -1,26 +1,73 @@
 # Ultra-Low Latency Market Data Gateway
 
-Modular C++ project scaffold for building a high-performance market data gateway.
+A deterministic, low-jitter, C++20 market data ingress engine built for high-frequency environments where microbursts, cache misses, and scheduling noise are first-class risks.
 
-## Highlights
+## Visual Sell
 
-- Hierarchical CMake layout with isolated modules
-- Automated dependency fetching (Catch2) via `FetchContent`
-- Two-stage parsing architecture in feeds (`Structural Scan` -> `Data Access`)
-- Runtime SIMD dispatch (AVX-512 -> AVX2 -> scalar) for structural scan
-- Structural index layout for O(1) field lookup in data access
-- PMR monotonic parse context for zero-allocation hot path parsing
-- SBE flyweight overlays for direct raw-buffer binary access
-- Alignment-aware SIMD paths using `std::assume_aligned` compiler hints
-- Consteval tag lookup tables replacing runtime switch/map dispatch
-- Compile-time FNV-1a hashing for O(1) message type routing jump tables
-- Slowpath removal and branch reduction using `[[likely]]`/`[[unlikely]]`
-- Socket-layer hardware timestamping configuration (`SO_TIMESTAMPING`)
-- Optional Solarflare ef_vi / Onload kernel bypass integration
-- Thread pinning and NUMA-aware memory allocation for jitter control
-- Lock-free MPSC queue for deferred non-critical processing
-- Google Benchmark latency suite with P50/P99 and flat-line checks
-- Baseline gateway orchestration and test harness
+### What this gateway is optimized for
+
+- Deterministic critical path: network -> parse -> route
+- Flat latency curve under sustained throughput
+- Minimal allocator pressure on hot loops
+- Isolated non-critical work (logging/persistence) off the fast path
+
+### Architecture at a glance
+
+```mermaid
+flowchart LR
+	NIC[Exchange NIC RX] --> TS[Hardware Timestamping]
+	TS --> KB[Kernel Bypass ef_vi/Onload]
+	TS --> UDP[UDP Socket RX]
+
+	KB --> PARSE
+	UDP --> PARSE
+
+	subgraph PARSE[Two-Stage Parsing]
+		S1[Stage 1 Structural Scan\nAVX-512/AVX2/Scalar]
+		S2[Stage 2 Data Access\nO(1) Indexed Tags]
+		S1 --> S2
+	end
+
+	S2 --> ROUTE[Compile-Time Hash Router\nFNV-1a Jump Table]
+	ROUTE --> HOT[Hot Path Outputs]
+	ROUTE --> DEFER[Lock-Free MPSC Deferred Queue]
+	DEFER --> BG[Background Logging/Persistence]
+
+	PIN[Thread Pinning + NUMA Locality] -.controls.-> PARSE
+	PIN -.controls.-> ROUTE
+```
+
+### Performance waterfall (target shape)
+
+```mermaid
+gantt
+	title Latency Waterfall (ns) - Per Message Budget
+	dateFormat  X
+	axisFormat %L
+	section Critical Path
+	NIC ingress + timestamp          :a1, 0, 80
+	Kernel bypass / socket receive   :a2, after a1, 100
+	Structural scan (SIMD)           :a3, after a2, 150
+	Data access + tag lookup         :a4, after a3, 70
+	Message routing                  :a5, after a4, 40
+	section Deferred Path
+	MPSC enqueue deferred task       :b1, 0, 20
+	Background persistence/logging   :b2, after b1, 400
+```
+
+## Key Capabilities
+
+- Hierarchical CMake project with modular runtime layers
+- Two-stage parsing pipeline with SIMD structural scanning
+- O(1) field access using structural index and consteval tag tables
+- PMR monotonic arena usage in parsing hot path
+- SBE flyweight overlays for direct binary buffer access
+- Compile-time FNV-1a routing hashes for switch-based dispatch
+- Slowpath isolation and branch hints for instruction cache protection
+- Linux hardware timestamping and optional Solarflare ef_vi/Onload hooks
+- Thread affinity and NUMA-aware memory placement
+- Lock-free MPSC deferred queue for non-critical work
+- Google Benchmark suite reporting p50/p99 and flatness ratio
 
 ## Build
 
@@ -30,48 +77,40 @@ cmake --build build --config Release
 ctest --test-dir build --output-on-failure
 ```
 
-Enable kernel bypass integration:
+Optional kernel bypass build flag:
 
 ```powershell
 cmake -S . -B build -DULL_ENABLE_EFVI=ON
 ```
 
-Run latency benchmarks:
+Benchmark build and run:
 
 ```powershell
 cmake -S . -B build -DULL_BUILD_BENCHMARKS=ON
 cmake --build build --config Release --target ull_benchmarks
-./build/benchmarks/Release/ull_benchmarks.exe --benchmark_format=console
+./build/benchmarks/Release/ull_benchmarks.exe --benchmark_format=console --benchmark_min_time=0.01s
 ```
 
-## Structure
+## Benchmark Readout
 
-- `apps/gateway`: executable entrypoint
-- `src/common`: shared low-level components
-	- Thread affinity helpers and NUMA-local allocation primitives
-	- Lock-free bounded MPSC queue primitive
-- `src/network`: network ingestion module
-	- Linux socket timestamping configuration for NIC ingress latency capture
-	- ef_vi / Onload kernel-bypass transport hooks (Linux, optional)
-- `src/feeds`: feed normalization module
-	- Stage 1: structural scanner with runtime feature detection and function-pointer dispatch
-	  - AVX-512 kernel: 64-byte cycle delimiter scan
-	  - AVX2 kernel: 32-byte cycle delimiter scan
-	  - Alignment hints: `std::assume_aligned` fast paths for aligned load instructions
-	  - Scalar kernel: portable fallback
-	  - PMR marker storage: `std::pmr::vector` on `std::pmr::monotonic_buffer_resource`
-	  - Structural index: precomputed hash slots for constant-time key lookup
-	  - Consteval tags: compile-time binary lookup arrays for known fields
-	  - Branch hints on hot loops with extracted slowpath error handlers
-	- Stage 2: data access view (typed field lookup without reparsing)
-- `src/sbe`: binary encoding/decoding module
-	- Flyweight wrappers over packed SBE structs
-	- Direct struct overlays on network buffers (no copy)
-- `src/gateway`: pipeline orchestration module
-	- Message type router using compile-time hash constants and switch-based jump table
-	- Execution controls for thread pinning and NUMA working-set allocation
-	- Deferred-task offload channel (logging/persistence) via lock-free MPSC
-- `tests`: unit tests (Catch2)
-- `benchmarks`: Google Benchmark suite
-	- Reports `p50_ns`, `p99_ns`, and `flat_ratio`
-	- `flat_ok=1` indicates P99/P50 is within configured threshold
+The benchmark suite exports these counters:
+
+- p50_ns: median single-message latency
+- p99_ns: high-percentile tail latency
+- flat_ratio: p99_ns / p50_ns
+- flat_ok: 1 when flat_ratio is within threshold
+
+## Repository Layout
+
+- apps/gateway: executable entrypoint
+- src/common: topology and queue primitives
+- src/network: transport, timestamping, kernel-bypass hooks
+- src/feeds: SIMD scan, indexed access, tag dispatch
+- src/sbe: flyweight binary overlays
+- src/gateway: routing, execution controls, deferred offload
+- tests: functional and concurrency tests
+- benchmarks: latency-distribution benchmark suite
+
+## Technical Manual
+
+See docs/TECHNICAL_MANUAL.md for deep implementation details, operational notes, and additional diagrams.
