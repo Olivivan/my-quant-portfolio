@@ -1,0 +1,48 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build-test-benchmark:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - ubuntu-latest
+          - windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure
+        shell: bash
+        run: |
+          cmake -S . -B build \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DULL_BUILD_BENCHMARKS=ON \
+            -DULL_ENABLE_EFVI=OFF
+
+      - name: Build
+        shell: bash
+        run: cmake --build build --config Release --parallel
+
+      - name: Test
+        shell: bash
+        run: ctest --test-dir build -C Release --output-on-failure
+
+      - name: Benchmark Smoke Test (Linux)
+        if: runner.os == 'Linux'
+        shell: bash
+        run: ./build/benchmarks/ull_benchmarks --benchmark_format=console --benchmark_min_time=0.01s
+
+      - name: Benchmark Smoke Test (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: .\build\benchmarks\Release\ull_benchmarks.exe --benchmark_format=console --benchmark_min_time=0.01s
