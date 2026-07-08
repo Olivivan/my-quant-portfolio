@@ -25,7 +25,7 @@ void scan_structural_avx2(std::string_view payload, ScanContext& context) noexce
             const std::uint32_t bit_flag = (1U << bit);
             const char marker = ((eq_mask & bit_flag) != 0U) ? key_value_delimiter : soh_delimiter;
 
-            if (!process_marker(context, offset + bit, marker)) {
+            if (!append_structural_marker(context, offset + bit, marker)) {
                 context.failed = true;
                 return;
             }
@@ -39,7 +39,7 @@ void scan_structural_avx2(std::string_view payload, ScanContext& context) noexce
     while (offset < payload.size()) {
         const char ch = payload[offset];
         if (ch == key_value_delimiter || ch == soh_delimiter) {
-            if (!process_marker(context, offset, ch)) {
+            if (!append_structural_marker(context, offset, ch)) {
                 context.failed = true;
                 return;
             }

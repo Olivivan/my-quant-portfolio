@@ -3,7 +3,7 @@
 namespace ull::feeds {
 
 bool FeedHandler::on_packet(std::string_view payload) noexcept {
-    const auto scan = scanner_.scan(payload);
+    const auto scan = scanner_.scan(payload, parse_context_);
     if (!scan.valid) {
         return false;
     }

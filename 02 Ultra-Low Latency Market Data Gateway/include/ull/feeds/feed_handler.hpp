@@ -13,6 +13,7 @@ public:
 
 private:
     StructuralScanner scanner_{};
+    ParseContext parse_context_{};
 };
 
 } // namespace ull::feeds

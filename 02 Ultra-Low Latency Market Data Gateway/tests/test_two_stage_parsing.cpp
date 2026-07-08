@@ -110,3 +110,36 @@ TEST_CASE("Structural index preserves first occurrence for duplicate keys", "[fe
     REQUIRE(symbol.has_value());
     REQUIRE(*symbol == "FIRST");
 }
+
+TEST_CASE("ParseContext can be reused across packets", "[feeds][pmr]") {
+    ull::feeds::StructuralScanner scanner;
+    ull::feeds::ParseContext parse_context;
+
+    const std::string first_payload = std::string{"sym=TSLA"} + SOH + "px=299.10" + SOH + "qty=42";
+    const std::string second_payload = std::string{"sym=ORCL"} + SOH + "px=140.25" + SOH + "qty=18";
+
+    const auto first_scan = scanner.scan(first_payload, parse_context);
+    REQUIRE(first_scan.valid);
+
+    const auto second_scan = scanner.scan(second_payload, parse_context);
+    REQUIRE(second_scan.valid);
+
+    const ull::feeds::DataAccessView first_access(first_payload, first_scan);
+    const ull::feeds::DataAccessView second_access(second_payload, second_scan);
+    REQUIRE(first_access.get_string("sym") == std::optional<std::string_view>{"TSLA"});
+    REQUIRE(second_access.get_string("sym") == std::optional<std::string_view>{"ORCL"});
+}
+
+TEST_CASE("ParseContext marker capacity rejects malformed oversized structural stream", "[feeds][pmr]") {
+    ull::feeds::StructuralScanner scanner;
+    ull::feeds::ParseContext parse_context;
+
+    std::string payload;
+    payload.reserve(ull::feeds::ParseContext::max_structural_markers + 8);
+    for (std::size_t i = 0; i < ull::feeds::ParseContext::max_structural_markers + 1; ++i) {
+        payload.push_back(SOH);
+    }
+
+    const auto scan = scanner.scan(payload, parse_context);
+    REQUIRE_FALSE(scan.valid);
+}

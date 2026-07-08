@@ -6,7 +6,7 @@ void scan_structural_scalar(std::string_view payload, ScanContext& context) noex
     for (std::size_t i = 0; i < payload.size(); ++i) {
         const char ch = payload[i];
         if (ch == key_value_delimiter || ch == soh_delimiter) {
-            if (!process_marker(context, i, ch)) {
+            if (!append_structural_marker(context, i, ch)) {
                 context.failed = true;
                 return;
             }

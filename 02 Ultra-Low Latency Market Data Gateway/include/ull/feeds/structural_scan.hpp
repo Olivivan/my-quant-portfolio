@@ -3,7 +3,9 @@
 #include <array>
 #include <cstddef>
 #include <cstdint>
+#include <memory_resource>
 #include <string_view>
+#include <vector>
 
 namespace ull::feeds {
 
@@ -24,6 +26,40 @@ struct FieldSlice {
     std::size_t value_length{0};
 };
 
+struct StructuralMarker {
+    std::size_t position{0};
+    char marker{0};
+};
+
+class ParseContext {
+public:
+    static constexpr std::size_t max_structural_markers = 128;
+    static constexpr std::size_t arena_size_bytes = 8192;
+
+    ParseContext()
+        : resource_(arena_.data(), arena_.size(), std::pmr::null_memory_resource()),
+          markers_(&resource_) {
+        markers_.reserve(max_structural_markers);
+    }
+
+    void reset() noexcept {
+        markers_.clear();
+    }
+
+    [[nodiscard]] std::pmr::vector<StructuralMarker>& markers() noexcept {
+        return markers_;
+    }
+
+    [[nodiscard]] const std::pmr::vector<StructuralMarker>& markers() const noexcept {
+        return markers_;
+    }
+
+private:
+    std::array<std::byte, arena_size_bytes> arena_{};
+    std::pmr::monotonic_buffer_resource resource_;
+    std::pmr::vector<StructuralMarker> markers_;
+};
+
 struct StructuralScanResult {
     static constexpr std::size_t max_fields = 32;
     static constexpr std::size_t index_capacity = 64;
@@ -37,6 +73,7 @@ struct StructuralScanResult {
 class StructuralScanner {
 public:
     [[nodiscard]] StructuralScanResult scan(std::string_view payload) const noexcept;
+    [[nodiscard]] StructuralScanResult scan(std::string_view payload, ParseContext& parse_context) const noexcept;
 };
 
 } // namespace ull::feeds

@@ -112,14 +112,28 @@ namespace {
 namespace ull::feeds {
 
 StructuralScanResult StructuralScanner::scan(std::string_view payload) const noexcept {
+    ParseContext parse_context;
+    return scan(payload, parse_context);
+}
+
+StructuralScanResult StructuralScanner::scan(std::string_view payload, ParseContext& parse_context) const noexcept {
     detail::ScanContext context{};
     if (payload.empty()) {
         return context.result;
     }
 
+    detail::initialize_scan_context(context, parse_context);
+
     detail::get_scan_kernel()(payload, context);
     if (context.failed) {
         return context.result;
+    }
+
+    for (const auto& marker : parse_context.markers()) {
+        if (!detail::process_marker(context, marker.position, marker.marker)) {
+            context.failed = true;
+            return context.result;
+        }
     }
 
     if (!detail::finalize_scan(context, payload.size())) {
