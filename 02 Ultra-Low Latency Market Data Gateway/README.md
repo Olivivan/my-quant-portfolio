@@ -18,6 +18,7 @@ Modular C++ project scaffold for building a high-performance market data gateway
 - Socket-layer hardware timestamping configuration (`SO_TIMESTAMPING`)
 - Optional Solarflare ef_vi / Onload kernel bypass integration
 - Thread pinning and NUMA-aware memory allocation for jitter control
+- Lock-free MPSC queue for deferred non-critical processing
 - Baseline gateway orchestration and test harness
 
 ## Build
@@ -39,6 +40,7 @@ cmake -S . -B build -DULL_ENABLE_EFVI=ON
 - `apps/gateway`: executable entrypoint
 - `src/common`: shared low-level components
 	- Thread affinity helpers and NUMA-local allocation primitives
+	- Lock-free bounded MPSC queue primitive
 - `src/network`: network ingestion module
 	- Linux socket timestamping configuration for NIC ingress latency capture
 	- ef_vi / Onload kernel-bypass transport hooks (Linux, optional)
@@ -59,4 +61,5 @@ cmake -S . -B build -DULL_ENABLE_EFVI=ON
 - `src/gateway`: pipeline orchestration module
 	- Message type router using compile-time hash constants and switch-based jump table
 	- Execution controls for thread pinning and NUMA working-set allocation
+	- Deferred-task offload channel (logging/persistence) via lock-free MPSC
 - `tests`: unit tests (Catch2)

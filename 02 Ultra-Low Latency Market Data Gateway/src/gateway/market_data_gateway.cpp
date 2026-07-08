@@ -74,4 +74,31 @@ std::uint64_t MarketDataGateway::routed_message_count() const noexcept {
     return routed_count_.load(std::memory_order_relaxed);
 }
 
+bool MarketDataGateway::enqueue_deferred_task(DeferredTask task) noexcept {
+    return deferred_queue_.try_enqueue(task);
+}
+
+std::size_t MarketDataGateway::process_deferred_tasks(std::size_t max_tasks) noexcept {
+    if (max_tasks == 0) {
+        return 0;
+    }
+
+    std::size_t processed = 0;
+    while (processed < max_tasks) {
+        const auto task = deferred_queue_.try_dequeue();
+        if (!task.has_value()) {
+            break;
+        }
+
+        ++processed;
+    }
+
+    deferred_processed_.fetch_add(processed, std::memory_order_relaxed);
+    return processed;
+}
+
+std::uint64_t MarketDataGateway::deferred_processed_count() const noexcept {
+    return deferred_processed_.load(std::memory_order_relaxed);
+}
+
 } // namespace ull::gateway

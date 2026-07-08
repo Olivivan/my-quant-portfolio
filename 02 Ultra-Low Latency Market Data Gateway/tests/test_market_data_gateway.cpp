@@ -31,3 +31,16 @@ TEST_CASE("Compile-time hash constants match runtime hashing", "[gateway][routin
     REQUIRE(fnv1a_64("BOOK_UPDATE") == ull::gateway::MarketDataGateway::book_update_hash);
     REQUIRE(fnv1a_64("HEARTBEAT") == ull::gateway::MarketDataGateway::heartbeat_hash);
 }
+
+TEST_CASE("MarketDataGateway defers non-critical tasks off hot path", "[gateway][deferred]") {
+    ull::gateway::MarketDataGateway gateway;
+
+    REQUIRE(gateway.enqueue_deferred_task({ull::gateway::DeferredTaskKind::logging, 10}));
+    REQUIRE(gateway.enqueue_deferred_task({ull::gateway::DeferredTaskKind::persistence, 20}));
+
+    REQUIRE(gateway.process_deferred_tasks(1) == 1);
+    REQUIRE(gateway.deferred_processed_count() == 1);
+    REQUIRE(gateway.process_deferred_tasks(8) == 1);
+    REQUIRE(gateway.deferred_processed_count() == 2);
+    REQUIRE(gateway.process_deferred_tasks(8) == 0);
+}

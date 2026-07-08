@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ull/common/fnv1a.hpp"
+#include "ull/common/mpsc_queue.hpp"
 #include "ull/common/thread_topology.hpp"
 
 #include <atomic>
@@ -15,6 +16,16 @@ enum class MessageType : std::uint8_t {
     book_update,
     heartbeat,
     unknown,
+};
+
+enum class DeferredTaskKind : std::uint8_t {
+    logging,
+    persistence,
+};
+
+struct DeferredTask {
+    DeferredTaskKind kind{DeferredTaskKind::logging};
+    std::uint64_t payload{0};
 };
 
 class MarketDataGateway {
@@ -35,9 +46,15 @@ public:
     [[nodiscard]] MessageType route_message_type(std::string_view message_type) noexcept;
     [[nodiscard]] std::uint64_t routed_message_count() const noexcept;
 
+    [[nodiscard]] bool enqueue_deferred_task(DeferredTask task) noexcept;
+    [[nodiscard]] std::size_t process_deferred_tasks(std::size_t max_tasks) noexcept;
+    [[nodiscard]] std::uint64_t deferred_processed_count() const noexcept;
+
 private:
     std::atomic<bool> running_{false};
     std::atomic<std::uint64_t> routed_count_{0};
+    ull::common::MpscQueue<DeferredTask, 1024> deferred_queue_{};
+    std::atomic<std::uint64_t> deferred_processed_{0};
     ull::common::NumaBuffer numa_working_set_{};
 };
 
