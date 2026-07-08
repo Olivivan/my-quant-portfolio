@@ -14,4 +14,34 @@ bool MarketDataGateway::is_running() const noexcept {
     return running_.load(std::memory_order_acquire);
 }
 
+MessageType MarketDataGateway::route_message_type(std::string_view message_type) noexcept {
+    const std::uint64_t hash = ull::common::fnv1a_64(message_type);
+
+    MessageType routed_type = MessageType::unknown;
+    switch (hash) {
+    case quote_hash:
+        routed_type = (message_type == "QUOTE") ? MessageType::quote : MessageType::unknown;
+        break;
+    case trade_hash:
+        routed_type = (message_type == "TRADE") ? MessageType::trade : MessageType::unknown;
+        break;
+    case book_update_hash:
+        routed_type = (message_type == "BOOK_UPDATE") ? MessageType::book_update : MessageType::unknown;
+        break;
+    case heartbeat_hash:
+        routed_type = (message_type == "HEARTBEAT") ? MessageType::heartbeat : MessageType::unknown;
+        break;
+    default:
+        routed_type = MessageType::unknown;
+        break;
+    }
+
+    routed_count_.fetch_add(1, std::memory_order_relaxed);
+    return routed_type;
+}
+
+std::uint64_t MarketDataGateway::routed_message_count() const noexcept {
+    return routed_count_.load(std::memory_order_relaxed);
+}
+
 } // namespace ull::gateway

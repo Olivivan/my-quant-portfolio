@@ -13,6 +13,7 @@ Modular C++ project scaffold for building a high-performance market data gateway
 - SBE flyweight overlays for direct raw-buffer binary access
 - Alignment-aware SIMD paths using `std::assume_aligned` compiler hints
 - Consteval tag lookup tables replacing runtime switch/map dispatch
+- Compile-time FNV-1a hashing for O(1) message type routing jump tables
 - Baseline gateway orchestration and test harness
 
 ## Build
@@ -42,4 +43,5 @@ ctest --test-dir build --output-on-failure
 	- Flyweight wrappers over packed SBE structs
 	- Direct struct overlays on network buffers (no copy)
 - `src/gateway`: pipeline orchestration module
+	- Message type router using compile-time hash constants and switch-based jump table
 - `tests`: unit tests (Catch2)
