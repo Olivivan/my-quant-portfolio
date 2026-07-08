@@ -1,14 +1,21 @@
-name: CI
+name: ull-gateway-ci
 
 on:
   push:
     branches:
       - main
+    paths:
+      - '02 Ultra-Low Latency Market Data Gateway/**'
+      - '.github/workflows/ull-gateway-ci.yml'
   pull_request:
+    paths:
+      - '02 Ultra-Low Latency Market Data Gateway/**'
+      - '.github/workflows/ull-gateway-ci.yml'
   workflow_dispatch:
 
 jobs:
   build-test-benchmark:
+    name: Build, test, benchmark (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -16,6 +23,9 @@ jobs:
         os:
           - ubuntu-latest
           - windows-latest
+    defaults:
+      run:
+        working-directory: 02 Ultra-Low Latency Market Data Gateway
 
     steps:
       - name: Checkout
