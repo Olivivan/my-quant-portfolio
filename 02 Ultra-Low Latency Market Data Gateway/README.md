@@ -23,7 +23,7 @@ ctest --test-dir build --output-on-failure
 - `src/common`: shared low-level components
 - `src/network`: network ingestion module
 - `src/feeds`: feed normalization module
-	- Stage 1: structural scanner (`key=value;...` metadata extraction)
+	- Stage 1: structural scanner (AVX2 scan of SOH and `=` delimiters)
 	- Stage 2: data access view (typed field lookup without reparsing)
 - `src/gateway`: pipeline orchestration module
 - `tests`: unit tests (Catch2)

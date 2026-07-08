@@ -4,8 +4,14 @@
 
 #include <catch2/catch.hpp>
 
+namespace {
+
+constexpr char SOH = '\x01';
+
+} // namespace
+
 TEST_CASE("Structural scanner extracts key/value boundaries", "[feeds][scan]") {
-    const std::string_view payload = "sym=AAPL;px=214.37;qty=120";
+    const std::string payload = std::string{"sym=AAPL"} + SOH + "px=214.37" + SOH + "qty=120";
 
     ull::feeds::StructuralScanner scanner;
     const auto scan = scanner.scan(payload);
@@ -15,7 +21,7 @@ TEST_CASE("Structural scanner extracts key/value boundaries", "[feeds][scan]") {
 }
 
 TEST_CASE("Data access resolves typed fields from scan metadata", "[feeds][access]") {
-    const std::string_view payload = "sym=MSFT;px=511.50;qty=90";
+    const std::string payload = std::string{"sym=MSFT"} + SOH + "px=511.50" + SOH + "qty=90";
 
     ull::feeds::StructuralScanner scanner;
     const auto scan = scanner.scan(payload);
@@ -39,9 +45,18 @@ TEST_CASE("Data access resolves typed fields from scan metadata", "[feeds][acces
 TEST_CASE("Feed handler validates required fields using two-stage parser", "[feeds][handler]") {
     ull::feeds::FeedHandler handler;
 
-    REQUIRE(handler.on_packet("sym=NVDA;px=1421.10;qty=50"));
-    REQUIRE_FALSE(handler.on_packet("sym=NVDA;px=bad;qty=50"));
-    REQUIRE_FALSE(handler.on_packet("sym=NVDA;qty=50"));
-    REQUIRE_FALSE(handler.on_packet("sym=;px=1421.10;qty=50"));
-    REQUIRE_FALSE(handler.on_packet("sym=NVDA;px=1421.10;qty=0"));
+    REQUIRE(handler.on_packet(std::string{"sym=NVDA"} + SOH + "px=1421.10" + SOH + "qty=50"));
+    REQUIRE_FALSE(handler.on_packet(std::string{"sym=NVDA"} + SOH + "px=bad" + SOH + "qty=50"));
+    REQUIRE_FALSE(handler.on_packet(std::string{"sym=NVDA"} + SOH + "qty=50"));
+    REQUIRE_FALSE(handler.on_packet(std::string{"sym="} + SOH + "px=1421.10" + SOH + "qty=50"));
+    REQUIRE_FALSE(handler.on_packet(std::string{"sym=NVDA"} + SOH + "px=1421.10" + SOH + "qty=0"));
+}
+
+TEST_CASE("Structural scanner rejects trailing SOH delimiter", "[feeds][scan]") {
+    const std::string payload = std::string{"sym=IBM"} + SOH + "px=184.5" + SOH;
+
+    ull::feeds::StructuralScanner scanner;
+    const auto scan = scanner.scan(payload);
+
+    REQUIRE_FALSE(scan.valid);
 }

@@ -13,3 +13,9 @@ target_link_libraries(ull_feeds
     PUBLIC
         ull_common
 )
+
+if(MSVC)
+    target_compile_options(ull_feeds PRIVATE /arch:AVX2)
+else()
+    target_compile_options(ull_feeds PRIVATE -mavx2)
+endif()
