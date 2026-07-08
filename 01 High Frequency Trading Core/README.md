@@ -83,7 +83,7 @@ cmake -S . -B build -DHFT_ENABLE_CLANG_TIDY=ON
 
 ## CI (Push + Pull Request)
 
-GitHub Actions workflow: `.github/workflows/ci.yml`
+GitHub Actions workflow: `/.github/workflows/hft-core-ci.yml`
 
 - Builds on `ubuntu-latest` and `windows-latest`
 - Runs tests with CTest
