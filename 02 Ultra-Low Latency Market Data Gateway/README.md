@@ -19,6 +19,7 @@ Modular C++ project scaffold for building a high-performance market data gateway
 - Optional Solarflare ef_vi / Onload kernel bypass integration
 - Thread pinning and NUMA-aware memory allocation for jitter control
 - Lock-free MPSC queue for deferred non-critical processing
+- Google Benchmark latency suite with P50/P99 and flat-line checks
 - Baseline gateway orchestration and test harness
 
 ## Build
@@ -33,6 +34,14 @@ Enable kernel bypass integration:
 
 ```powershell
 cmake -S . -B build -DULL_ENABLE_EFVI=ON
+```
+
+Run latency benchmarks:
+
+```powershell
+cmake -S . -B build -DULL_BUILD_BENCHMARKS=ON
+cmake --build build --config Release --target ull_benchmarks
+./build/benchmarks/Release/ull_benchmarks.exe --benchmark_format=console
 ```
 
 ## Structure
@@ -63,3 +72,6 @@ cmake -S . -B build -DULL_ENABLE_EFVI=ON
 	- Execution controls for thread pinning and NUMA working-set allocation
 	- Deferred-task offload channel (logging/persistence) via lock-free MPSC
 - `tests`: unit tests (Catch2)
+- `benchmarks`: Google Benchmark suite
+	- Reports `p50_ns`, `p99_ns`, and `flat_ratio`
+	- `flat_ok=1` indicates P99/P50 is within configured threshold
