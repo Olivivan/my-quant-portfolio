@@ -5,6 +5,7 @@ add_executable(ull_tests
     test_two_stage_parsing.cpp
     test_sbe_flyweight.cpp
     test_network_timestamping.cpp
+    test_kernel_bypass.cpp
 )
 
 target_link_libraries(ull_tests

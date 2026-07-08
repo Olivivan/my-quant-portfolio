@@ -16,6 +16,7 @@ Modular C++ project scaffold for building a high-performance market data gateway
 - Compile-time FNV-1a hashing for O(1) message type routing jump tables
 - Slowpath removal and branch reduction using `[[likely]]`/`[[unlikely]]`
 - Socket-layer hardware timestamping configuration (`SO_TIMESTAMPING`)
+- Optional Solarflare ef_vi / Onload kernel bypass integration
 - Baseline gateway orchestration and test harness
 
 ## Build
@@ -26,12 +27,19 @@ cmake --build build --config Release
 ctest --test-dir build --output-on-failure
 ```
 
+Enable kernel bypass integration:
+
+```powershell
+cmake -S . -B build -DULL_ENABLE_EFVI=ON
+```
+
 ## Structure
 
 - `apps/gateway`: executable entrypoint
 - `src/common`: shared low-level components
 - `src/network`: network ingestion module
 	- Linux socket timestamping configuration for NIC ingress latency capture
+	- ef_vi / Onload kernel-bypass transport hooks (Linux, optional)
 - `src/feeds`: feed normalization module
 	- Stage 1: structural scanner with runtime feature detection and function-pointer dispatch
 	  - AVX-512 kernel: 64-byte cycle delimiter scan
