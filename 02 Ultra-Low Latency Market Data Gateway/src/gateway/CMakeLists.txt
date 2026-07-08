@@ -12,4 +12,5 @@ target_link_libraries(ull_gateway
         ull_common
         ull_network
         ull_feeds
+    ull_sbe
 )
