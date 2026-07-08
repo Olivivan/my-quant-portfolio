@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ull/common/fnv1a.hpp"
+#include "ull/common/thread_topology.hpp"
 
 #include <atomic>
 #include <cstdint>
@@ -27,12 +28,17 @@ public:
     void stop() noexcept;
     [[nodiscard]] bool is_running() const noexcept;
 
+    [[nodiscard]] bool pin_execution_thread(std::size_t cpu_index) noexcept;
+    [[nodiscard]] bool allocate_numa_working_set(std::size_t bytes, std::uint32_t numa_node) noexcept;
+    [[nodiscard]] bool numa_working_set_ready() const noexcept;
+
     [[nodiscard]] MessageType route_message_type(std::string_view message_type) noexcept;
     [[nodiscard]] std::uint64_t routed_message_count() const noexcept;
 
 private:
     std::atomic<bool> running_{false};
     std::atomic<std::uint64_t> routed_count_{0};
+    ull::common::NumaBuffer numa_working_set_{};
 };
 
 } // namespace ull::gateway

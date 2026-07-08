@@ -6,6 +6,7 @@ add_executable(ull_tests
     test_sbe_flyweight.cpp
     test_network_timestamping.cpp
     test_kernel_bypass.cpp
+    test_thread_topology.cpp
 )
 
 target_link_libraries(ull_tests
