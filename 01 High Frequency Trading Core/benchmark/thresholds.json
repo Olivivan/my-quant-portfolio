@@ -1,0 +1,4 @@
+{
+  "min_orders_per_sec": 5000,
+  "notes": "Conservative CI baseline for Linux runner. Raise after stable CI observations."
+}

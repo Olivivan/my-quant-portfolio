@@ -1,0 +1,2 @@
+date,environment,orders,elapsed_ms,orders_per_sec,notes
+2026-07-08,local-windows-i9-13900k-g++16.1.0,200000,21805.134,9172,initial reproducible baseline from --benchmark mode
