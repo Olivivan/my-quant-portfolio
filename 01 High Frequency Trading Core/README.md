@@ -26,6 +26,16 @@ It is not marketed as a production trading engine. The current focus is correctn
 - `hft_render_lib` (header-only INTERFACE target): simple runtime rendering/log helpers
 - `hft_tests` (test executable): Catch2-based unit tests for matching and management behavior
 
+## Visual Sell
+
+### System Architecture
+
+![HFT Core Architecture](docs/assets/architecture-overview.svg)
+
+### Price-Time Matching Flow
+
+![Matching Sequence](docs/assets/matching-sequence.svg)
+
 ## Build And Run
 
 ### Requirements
@@ -70,6 +80,42 @@ Run tests:
 ctest --test-dir build -C Release --output-on-failure
 ```
 
+## API Documentation (Doxygen)
+
+The project ships with a CMake-powered `docs` target.
+
+Requirements:
+
+- Doxygen 1.9+
+- Graphviz (optional; required only for diagram generation)
+
+Generate docs:
+
+```bash
+cmake -S . -B build -DHFT_BUILD_DOCS=ON
+cmake --build build --target docs --config Release
+```
+
+Strict docs build (recommended for CI):
+
+```bash
+cmake -S . -B build -DHFT_BUILD_DOCS=ON -DHFT_DOCS_WARN_AS_ERROR=ON
+cmake --build build --target docs --config Release
+```
+
+Optional diagram rendering (Graphviz):
+
+```bash
+cmake -S . -B build -DHFT_BUILD_DOCS=ON -DHFT_DOCS_WITH_DOT=ON
+```
+
+Open the generated site:
+
+- `build/docs/html/index.html`
+
+If Doxygen is not found, configure still succeeds and the `docs` target is skipped.
+Graphviz diagrams are auto-enabled only when a healthy `dot` executable is detected.
+
 ## Static Analysis
 
 - Compiler warnings are enabled by default (`/W4 /permissive-` on MSVC, `-Wall -Wextra -Wpedantic` otherwise)
@@ -83,13 +129,10 @@ cmake -S . -B build -DHFT_ENABLE_CLANG_TIDY=ON
 
 ## CI (Push + Pull Request)
 
-GitHub Actions workflow: `/.github/workflows/hft-core-ci.yml`
+GitHub Actions workflows:
 
-- Builds on `ubuntu-latest` and `windows-latest`
-- Runs tests with CTest
-- Runs `cppcheck` static analysis
-- Runs a Linux benchmark threshold gate using `scripts/check_benchmark_threshold.py`
-- Uploads Linux benchmark output and a generated history-row CSV as artifacts
+- `/.github/workflows/hft-core-ci.yml` for cross-platform build/test and docs warning-gate
+- `/.github/workflows/docs-pages.yml` for publishing generated docs to GitHub Pages on `main`
 
 ## Performance Snapshot (Reproducible)
 

@@ -1,0 +1,46 @@
+name: hft-core-ci
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  build-and-test:
+    name: Build & Test (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure
+        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build
+        run: cmake --build build --config Release
+
+      - name: Run tests
+        run: ctest --test-dir build -C Release --output-on-failure
+
+  docs-check:
+    name: Docs Check (warnings-as-errors)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install docs dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y doxygen graphviz
+
+      - name: Configure docs
+        run: cmake -S . -B build -DHFT_BUILD_DOCS=ON -DHFT_DOCS_WARN_AS_ERROR=ON -DHFT_DOCS_WITH_DOT=ON
+
+      - name: Build docs
+        run: cmake --build build --target docs --config Release

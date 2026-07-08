@@ -8,19 +8,44 @@
 #include <optional>
 #include <unordered_set>
 
+/**
+ * @brief Core matching primitives for the HFT portfolio engine.
+ */
 namespace HFT {
+    /**
+     * @brief Immutable order payload accepted by the engine APIs.
+     */
     struct Order {
+        /** Unique positive order identifier. */
         uint64_t id;
+        /** Positive limit price. */
         double price;
+        /** Positive remaining quantity in units. */
         uint32_t quantity;
+        /** True for buy orders, false for sell orders. */
         bool isBuy;
+        /** Non-negative event timestamp used for time-priority ordering. */
         long timestamp;
     };
 
+    /**
+     * @brief Deterministic in-memory limit order book implementing price-time priority.
+     */
     class HFTCore {
     public:
+        /**
+         * @brief Reserved engine update hook.
+         *
+         * The current portfolio implementation is fully event-driven and
+         * performs all work during order operations.
+         */
         void Update() {}
 
+        /**
+         * @brief Submit a limit order and attempt immediate matching.
+         * @param order Incoming order.
+         * @return true if accepted, false when validation fails or id is already active.
+         */
         bool LimitOrder(Order order) {
             if (!ValidateOrder(order) || HasOrderId(order.id)) {
                 return false;
@@ -41,6 +66,11 @@ namespace HFT {
             return true;
         }
 
+        /**
+         * @brief Cancel an active order by id.
+         * @param orderId Active order identifier.
+         * @return true if an order was found and canceled.
+         */
         bool CancelOrder(uint64_t orderId) {
             if (EraseOrderFromBook(m_BuyBook, orderId)) {
                 m_ActiveOrderIds.erase(orderId);
@@ -55,6 +85,14 @@ namespace HFT {
             return false;
         }
 
+        /**
+         * @brief Replace an existing active order with a new payload.
+         * @param orderId Existing active order id.
+         * @param newPrice Replacement price.
+         * @param newQuantity Replacement quantity.
+         * @param newTimestamp Replacement timestamp.
+         * @return true if replacement succeeds, false otherwise.
+         */
         bool ReplaceOrder(uint64_t orderId, double newPrice, uint32_t newQuantity, long newTimestamp) {
             std::optional<Order> existing = RemoveOrderById(orderId);
             if (!existing.has_value()) {
@@ -91,14 +129,23 @@ namespace HFT {
             return true;
         }
 
+        /**
+         * @brief Get buy-side book levels sorted from best bid to worst bid.
+         */
         const std::map<double, std::list<Order>, std::greater<double>>& GetBuyBook() const {
             return m_BuyBook;
         }
 
+        /**
+         * @brief Get sell-side book levels sorted from best ask to worst ask.
+         */
         const std::map<double, std::list<Order>>& GetSellBook() const {
             return m_SellBook;
         }
 
+        /**
+         * @brief Best bid price, if present.
+         */
         std::optional<double> GetBestBidPrice() const {
             if (m_BuyBook.empty()) {
                 return std::nullopt;
@@ -106,6 +153,9 @@ namespace HFT {
             return m_BuyBook.begin()->first;
         }
 
+        /**
+         * @brief Best ask price, if present.
+         */
         std::optional<double> GetBestAskPrice() const {
             if (m_SellBook.empty()) {
                 return std::nullopt;
