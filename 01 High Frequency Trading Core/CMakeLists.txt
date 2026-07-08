@@ -72,11 +72,15 @@ if(HFT_BUILD_DOCS)
 
 		set(HFT_DOXYGEN_IN ${CMAKE_CURRENT_SOURCE_DIR}/docs/Doxyfile.in)
 		set(HFT_DOXYGEN_OUT ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile)
+		set(HFT_DOCS_ASSETS_SRC ${CMAKE_CURRENT_SOURCE_DIR}/docs/assets)
+		set(HFT_DOCS_ASSETS_DST ${CMAKE_BINARY_DIR}/docs/html/docs/assets)
 
 		configure_file(${HFT_DOXYGEN_IN} ${HFT_DOXYGEN_OUT} @ONLY)
 
 		add_custom_target(docs
 			COMMAND ${DOXYGEN_EXECUTABLE} ${HFT_DOXYGEN_OUT}
+			COMMAND ${CMAKE_COMMAND} -E make_directory ${HFT_DOCS_ASSETS_DST}
+			COMMAND ${CMAKE_COMMAND} -E copy_directory ${HFT_DOCS_ASSETS_SRC} ${HFT_DOCS_ASSETS_DST}
 			WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
 			COMMENT "Generating API documentation with Doxygen"
 			VERBATIM
