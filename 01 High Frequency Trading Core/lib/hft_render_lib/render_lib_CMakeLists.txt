@@ -1,4 +1,4 @@
-# Define the logging and rendering module as a static library
-add_library(hft_render_lib STATIC hft_render.cpp hft_render.h)
+# Define the rendering module as a header-only interface library.
+add_library(hft_render_lib INTERFACE)
 
-target_include_directories(hft_render_lib PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+target_include_directories(hft_render_lib INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})

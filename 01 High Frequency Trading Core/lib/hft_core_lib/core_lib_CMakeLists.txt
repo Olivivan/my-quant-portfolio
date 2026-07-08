@@ -1,5 +1,5 @@
-# Define the matching engine logic as a static library
-add_library(hft_core_lib STATIC hft_core.cpp hft_core.h)
+# Define the matching engine logic as a header-only interface library.
+add_library(hft_core_lib INTERFACE)
 
 # Ensure headers are accessible to other modules
-target_include_directories(hft_core_lib PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+target_include_directories(hft_core_lib INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
