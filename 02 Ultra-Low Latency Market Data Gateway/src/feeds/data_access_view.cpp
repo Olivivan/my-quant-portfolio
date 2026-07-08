@@ -56,12 +56,22 @@ std::optional<std::string_view> DataAccessView::value_for(std::string_view key) 
         return std::nullopt;
     }
 
-    for (std::size_t i = 0; i < scan_.field_count; ++i) {
-        const auto& field = scan_.fields[i];
+    constexpr std::size_t mask = StructuralScanResult::index_capacity - 1;
+    std::size_t slot = static_cast<std::size_t>(structural_key_hash(key)) & mask;
+
+    for (std::size_t probe = 0; probe < StructuralScanResult::index_capacity; ++probe) {
+        const std::uint8_t entry = scan_.index_slots[slot];
+        if (entry == 0U) {
+            return std::nullopt;
+        }
+
+        const auto& field = scan_.fields[static_cast<std::size_t>(entry - 1U)];
         const auto field_key = payload_.substr(field.key_offset, field.key_length);
         if (field_key == key) {
             return payload_.substr(field.value_offset, field.value_length);
         }
+
+        slot = (slot + 1) & mask;
     }
 
     return std::nullopt;

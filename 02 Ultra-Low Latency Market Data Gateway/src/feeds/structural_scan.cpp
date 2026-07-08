@@ -8,6 +8,42 @@ namespace ull::feeds::detail {
 
 namespace {
 
+[[nodiscard]] bool build_structural_index(std::string_view payload, StructuralScanResult& result) noexcept {
+    constexpr std::size_t mask = StructuralScanResult::index_capacity - 1;
+
+    for (std::size_t field_index = 0; field_index < result.field_count; ++field_index) {
+        const auto& field = result.fields[field_index];
+        const auto key = payload.substr(field.key_offset, field.key_length);
+        std::size_t slot = static_cast<std::size_t>(structural_key_hash(key)) & mask;
+
+        bool resolved = false;
+        for (std::size_t probe = 0; probe < StructuralScanResult::index_capacity; ++probe) {
+            auto& entry = result.index_slots[slot];
+            if (entry == 0U) {
+                entry = static_cast<std::uint8_t>(field_index + 1);
+                resolved = true;
+                break;
+            }
+
+            const std::size_t existing_index = static_cast<std::size_t>(entry - 1U);
+            const auto& existing = result.fields[existing_index];
+            const auto existing_key = payload.substr(existing.key_offset, existing.key_length);
+            if (existing_key == key) {
+                resolved = true;
+                break;
+            }
+
+            slot = (slot + 1) & mask;
+        }
+
+        if (!resolved) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
 [[nodiscard]] bool supports_avx2_runtime() noexcept {
     int cpuid[4]{};
     __cpuidex(cpuid, 1, 0);
@@ -87,6 +123,10 @@ StructuralScanResult StructuralScanner::scan(std::string_view payload) const noe
     }
 
     if (!detail::finalize_scan(context, payload.size())) {
+        return context.result;
+    }
+
+    if (!detail::build_structural_index(payload, context.result)) {
         return context.result;
     }
 

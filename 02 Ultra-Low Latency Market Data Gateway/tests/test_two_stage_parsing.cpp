@@ -81,3 +81,32 @@ TEST_CASE("Structural scanner handles payload across 64-byte blocks", "[feeds][s
     REQUIRE(scan.valid);
     REQUIRE(scan.field_count == 5);
 }
+
+TEST_CASE("Structural index supports O(1) lookup semantics", "[feeds][index]") {
+    const std::string payload = std::string{"sym=AMD"} + SOH + "px=166.42" + SOH + "qty=700" + SOH + "venue=XNAS";
+
+    ull::feeds::StructuralScanner scanner;
+    const auto scan = scanner.scan(payload);
+    REQUIRE(scan.valid);
+
+    const ull::feeds::DataAccessView access(payload, scan);
+    REQUIRE(access.get_string("sym") == std::optional<std::string_view>{"AMD"});
+    const auto price = access.get_double("px");
+    REQUIRE(price.has_value());
+    REQUIRE(*price == Approx(166.42));
+    REQUIRE(access.get_uint32("qty") == std::optional<std::uint32_t>{700});
+    REQUIRE(access.get_string("missing") == std::nullopt);
+}
+
+TEST_CASE("Structural index preserves first occurrence for duplicate keys", "[feeds][index]") {
+    const std::string payload = std::string{"sym=FIRST"} + SOH + "sym=SECOND" + SOH + "px=1.5" + SOH + "qty=10";
+
+    ull::feeds::StructuralScanner scanner;
+    const auto scan = scanner.scan(payload);
+    REQUIRE(scan.valid);
+
+    const ull::feeds::DataAccessView access(payload, scan);
+    const auto symbol = access.get_string("sym");
+    REQUIRE(symbol.has_value());
+    REQUIRE(*symbol == "FIRST");
+}

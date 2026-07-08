@@ -8,6 +8,7 @@ Modular C++ project scaffold for building a high-performance market data gateway
 - Automated dependency fetching (Catch2) via `FetchContent`
 - Two-stage parsing architecture in feeds (`Structural Scan` -> `Data Access`)
 - Runtime SIMD dispatch (AVX-512 -> AVX2 -> scalar) for structural scan
+- Structural index layout for O(1) field lookup in data access
 - Baseline gateway orchestration and test harness
 
 ## Build
@@ -28,6 +29,7 @@ ctest --test-dir build --output-on-failure
 	  - AVX-512 kernel: 64-byte cycle delimiter scan
 	  - AVX2 kernel: 32-byte cycle delimiter scan
 	  - Scalar kernel: portable fallback
+	  - Structural index: precomputed hash slots for constant-time key lookup
 	- Stage 2: data access view (typed field lookup without reparsing)
 - `src/gateway`: pipeline orchestration module
 - `tests`: unit tests (Catch2)
