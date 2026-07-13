@@ -18,5 +18,5 @@ if (-not $quantExists) {
     psql -w -U postgres -c "CREATE USER quant WITH PASSWORD 'quantpass' CREATEDB;"
 }
 
-psql -w -U postgres -d quantdb -c "GRANT ALL PRIVILEGES ON DATABASE quantdb TO quant; GRANT USAGE ON SCHEMA public TO quant; GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO quant; ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO quant; GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO quant;"
+psql -w -U postgres -d quantdb -c "GRANT ALL PRIVILEGES ON DATABASE quantdb TO quant; GRANT USAGE, CREATE ON SCHEMA public TO quant; GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO quant; ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO quant; GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO quant;"
 Write-Host "Database initialized"

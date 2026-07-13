@@ -20,10 +20,11 @@ using namespace qp;
 int main(int argc, char* argv[]) {
     try {
         string config_path = (argc > 1) ? argv[1] : "config/pipeline.json";
+        string symbol_filter = (argc > 2) ? argv[2] : "";
         Config cfg(config_path);
 
         Logger::instance();
-        QP_INFO("Starting ETL pipeline");
+        QP_INFO("Starting ETL pipeline{}", symbol_filter.empty() ? "" : " for " + symbol_filter);
 
         string conn_str = fmt::format(
             "host={} port={} dbname={} user={} password={}",
@@ -46,6 +47,9 @@ int main(int argc, char* argv[]) {
         for (const auto& entry : filesystem::directory_iterator(cfg.raw_data_dir())) {
             if (!entry.is_regular_file()) continue;
 
+            string file_symbol = entry.path().stem().string();
+            if (!symbol_filter.empty() && file_symbol != symbol_filter) continue;
+
             futures.push_back(async(launch::async, [&, path = entry.path().string()] {
                 etl::TickParser parser;
                 auto maybe_ticks = parser.parse_csv(path);
@@ -66,12 +70,12 @@ int main(int argc, char* argv[]) {
             }));
 
             if (futures.size() >= static_cast<size_t>(cfg.thread_pool_size())) {
-                for (auto& f : futures) f.wait();
+                for (auto& f : futures) f.get();
                 futures.clear();
             }
         }
 
-        for (auto& f : futures) f.wait();
+        for (auto& f : futures) f.get();
         QP_INFO("ETL pipeline completed");
 
     } catch (const exception& e) {

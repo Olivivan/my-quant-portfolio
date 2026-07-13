@@ -56,6 +56,7 @@ vector<Bar> load_bars_from_csv(const string& path) {
 int main(int argc, char* argv[]) {
     try {
         string config_path = (argc > 1) ? argv[1] : "config/pipeline.json";
+        string symbol_filter = (argc > 2) ? argv[2] : "";
         Config cfg(config_path);
         Logger::instance();
 
@@ -74,6 +75,16 @@ int main(int argc, char* argv[]) {
         filesystem::path clean_dir = cfg.clean_data_dir();
         for (const auto& entry : filesystem::directory_iterator(clean_dir)) {
             if (!entry.is_regular_file()) continue;
+
+            string file_symbol = entry.path().stem().string();
+            // Clean file names end with "_bars", strip that suffix for matching.
+            const string suffix = "_bars";
+            if (file_symbol.size() > suffix.size() &&
+                file_symbol.compare(file_symbol.size() - suffix.size(), suffix.size(), suffix) == 0) {
+                file_symbol = file_symbol.substr(0, file_symbol.size() - suffix.size());
+            }
+            if (!symbol_filter.empty() && file_symbol != symbol_filter) continue;
+
             auto bars = load_bars_from_csv(entry.path().string());
             if (bars.empty()) continue;
             auto mat = engine.build(bars);

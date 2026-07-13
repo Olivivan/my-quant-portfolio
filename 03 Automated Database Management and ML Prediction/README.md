@@ -5,7 +5,15 @@ A professional-grade quantitative pipeline for ingesting raw financial market da
 ## Architecture
 
 ```text
-Raw market data (CSV / API / socket)
+Yahoo Finance OHLCV
+        │
+        ▼
+┌─────────────────────────────┐
+│   Python fetch_yahoo.py     │  <- real 1-minute data, top-10 US equities
+└─────────────────────────────┘
+        │
+        ▼
+Tick-like CSV per symbol
         │
         ▼
 ┌─────────────────────────────┐
@@ -27,6 +35,12 @@ Redis hot cache  ──►  Python ML Training  ──►  ONNX model
                             │
                             ▼
                   Trading signals / execution
+
+Top-10 universe: AAPL, MSFT, NVDA, AMZN, GOOGL, META, TSLA, AVGO, BRK-B, JPM.
+
+Ticks are stored in per-symbol tables (`ticks_<symbol>`).  ETL, feature
+engineering and inference are run **one ticker at a time** so predictions are
+produced sequentially after each symbol's features are built.
 ```
 
 ## Technology Choices
@@ -74,34 +88,29 @@ This hybrid minimizes tool licensing and maintenance costs without sacrificing p
    created automatically when the extension is installed; otherwise plain
    PostgreSQL tables are used.
 
-3. Generate sample data:
-
-   ```powershell
-   .\scripts\generate_sample_data.ps1
-   ```
-
-4. Build C++ pipeline:
+3. (Optional) Build C++ pipeline:
 
    ```powershell
    .\scripts\build_cpp.ps1
    ```
 
-5. Run ETL + DB load:
+4. Run the real-data Yahoo Finance pipeline end-to-end:
 
    ```powershell
-   .\scripts\run_etl.ps1
+   .\scripts\run_pipeline_yahoo.ps1
    ```
 
-6. Train ML model:
+   This script: fetches 7-day 1-minute OHLCV for the top-10 universe from
+   Yahoo Finance, trains a LightGBM direction model, exports it to ONNX, then
+   loops through each symbol running ETL → features → inference one ticker at
+   a time.
+
+5. Run a single stage for one symbol:
 
    ```powershell
-   .\scripts\train_model.ps1
-   ```
-
-7. Run inference:
-
-   ```powershell
-   .\scripts\run_inference.ps1
+   .\scripts\run_etl.ps1 -Symbol AAPL
+   .\scripts\run_features.ps1 -Symbol AAPL
+   .\scripts\run_inference.ps1 -Symbol AAPL
    ```
 
 ## License

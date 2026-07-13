@@ -15,7 +15,7 @@
     "raw_data_dir": "data/raw",
     "clean_data_dir": "data/clean",
     "parquet_output_dir": "data/parquet",
-    "symbols": ["AAPL", "MSFT", "GOOGL", "TSLA"],
+    "symbols": ["AAPL", "MSFT", "NVDA", "AMZN", "GOOGL", "META", "TSLA", "AVGO", "BRK-B", "JPM"],
     "default_bar_interval_sec": 60,
     "thread_pool_size": 4,
     "batch_insert_size": 10000

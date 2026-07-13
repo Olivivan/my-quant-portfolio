@@ -1,4 +1,5 @@
 #!/usr/bin/env pwsh
+param([string]$Symbol = "")
 $ErrorActionPreference = "Stop"
 $root = $PSScriptRoot | Split-Path -Parent
 $junction = "C:\quant-pipeline"
@@ -13,4 +14,4 @@ if (-not (Test-Path $exe)) {
     throw "quant_inference.exe not found. Run build_cpp.ps1 first."
 }
 
-& $exe "$root\config\pipeline.json"
+& $exe "$root\config\pipeline.json" $Symbol

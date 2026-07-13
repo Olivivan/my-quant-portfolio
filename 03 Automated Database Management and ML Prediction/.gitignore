@@ -12,10 +12,10 @@ __pycache__/
 *.egg-info/
 .pytest_cache/
 
-# Data / models
-data/
-models/
-logs/
+# Data / models (root directories only, keep src/python/data and src/python/models)
+/data/
+/models/
+/logs/
 *.parquet
 *.csv
 

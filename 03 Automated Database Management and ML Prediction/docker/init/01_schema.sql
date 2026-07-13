@@ -25,6 +25,43 @@ EXCEPTION WHEN OTHERS THEN
 END $$;
 CREATE INDEX IF NOT EXISTS idx_ticks_symbol_time ON ticks (symbol, time DESC);
 
+-- Per-ticker tick tables. The C++ ETL writer creates these on the fly;
+-- this helper procedure pre-creates them for the default top-ten universe.
+CREATE OR REPLACE FUNCTION create_tick_table(p_symbol TEXT)
+RETURNS TEXT AS $$
+DECLARE
+    table_name TEXT := 'ticks_' || lower(regexp_replace(p_symbol, '[^a-zA-Z0-9]', '_', 'g'));
+BEGIN
+    EXECUTE format(
+        'CREATE TABLE IF NOT EXISTS %I (
+            time TIMESTAMPTZ NOT NULL,
+            symbol TEXT NOT NULL,
+            price DOUBLE PRECISION NOT NULL,
+            size DOUBLE PRECISION NOT NULL,
+            side SMALLINT,
+            source TEXT,
+            received_at TIMESTAMPTZ DEFAULT NOW()
+        )',
+        table_name
+    );
+    EXECUTE format(
+        'CREATE INDEX IF NOT EXISTS idx_%s_symbol_time ON %I (symbol, time DESC)',
+        table_name, table_name
+    );
+    RETURN table_name;
+END;
+$$ LANGUAGE plpgsql;
+
+DO $$
+DECLARE
+    sym TEXT;
+    default_symbols TEXT[] := ARRAY['AAPL','MSFT','NVDA','AMZN','GOOGL','META','TSLA','AVGO','BRK_B','JPM'];
+BEGIN
+    FOREACH sym IN ARRAY default_symbols LOOP
+        PERFORM create_tick_table(sym);
+    END LOOP;
+END $$;
+
 -- OHLCV bars
 CREATE TABLE IF NOT EXISTS bars_1m (
     time TIMESTAMPTZ NOT NULL,

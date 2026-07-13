@@ -13,6 +13,7 @@ using namespace qp;
 int main(int argc, char* argv[]) {
     try {
         string config_path = (argc > 1) ? argv[1] : "config/pipeline.json";
+        string symbol_filter = (argc > 2) ? argv[2] : "";
         Config cfg(config_path);
         Logger::instance();
 
@@ -33,8 +34,10 @@ int main(int argc, char* argv[]) {
 
         for (const auto& sym : cfg.raw()["ingestion"]["symbols"]) {
             string symbol = sym.get<string>();
+            if (!symbol_filter.empty() && symbol != symbol_filter) continue;
+
             db::FeatureRepository repo(pool);
-            auto rows = repo.load_features(symbol, "2024-01-01", "2026-01-01");
+            auto rows = repo.load_features(symbol, "2020-01-01", "2030-01-01");
 
             features::FeatureMatrix mat;
             for (const auto& r : rows) {
