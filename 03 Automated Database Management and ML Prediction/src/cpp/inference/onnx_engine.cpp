@@ -38,14 +38,25 @@ OnnxEngine::OnnxEngine(const OnnxConfig& cfg)
 
     Ort::AllocatorWithDefaultOptions alloc;
     input_name_ = session_->GetInputNameAllocated(0, alloc).get();
-    output_name_ = session_->GetOutputNameAllocated(0, alloc).get();
+
+    // LightGBM ONNX models expose two outputs: "label" (index 0) and
+    // "probabilities" (index 1). The label output has a fixed-shape metadata
+    // quirk that causes ONNX Runtime warnings when batch size changes, and it
+    // only returns a class index rather than the 3-class probabilities we need.
+    // Prefer the probabilities output whenever it is available.
+    size_t output_index = 0;
+    if (session_->GetOutputCount() > 1) {
+        output_index = 1;
+    }
+    output_name_ = session_->GetOutputNameAllocated(output_index, alloc).get();
 
     auto type_info = session_->GetInputTypeInfo(0);
     auto tensor_info = type_info.GetTensorTypeAndShapeInfo();
     input_shape_ = tensor_info.GetShape();
     num_features_ = input_shape_[1] > 0 ? static_cast<size_t>(input_shape_[1]) : 0;
 
-    QP_INFO("ONNX engine loaded {} with input shape [{}, {}]", cfg.model_path, cfg.batch_size, num_features_);
+    QP_INFO("ONNX engine loaded {} with input shape [{}, {}] using output '{}'",
+            cfg.model_path, cfg.batch_size, num_features_, output_name_);
 }
 
 vector<int> OnnxEngine::predict_direction(const vector<vector<float>>& features) {

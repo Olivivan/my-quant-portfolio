@@ -9,7 +9,7 @@
 - [Visual Studio 2022](https://visualstudio.microsoft.com/downloads/) with "Desktop development with C++" workload
 - [vcpkg](https://github.com/microsoft/vcpkg) (optional but recommended for C++ deps)
 - [Docker Desktop](https://www.docker.com/products/docker-desktop/) with WSL2 backend
-- [Python](https://www.python.org/downloads/) ≥ 3.10 (tested with 3.14)
+- [Python](https://www.python.org/downloads/) ≥ 3.10, **3.13 recommended** (Python 3.14 pre-release builds are not supported due to scipy/sklearn incompatibilities)
 - [Node.js](https://nodejs.org/) (only if using ONNX Runtime web features, not required here)
 
 ## Install C++ Dependencies via vcpkg
