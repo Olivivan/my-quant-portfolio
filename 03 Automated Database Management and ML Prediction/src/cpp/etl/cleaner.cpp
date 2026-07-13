@@ -40,14 +40,22 @@ vector<CleanedTick> Cleaner::clean(vector<Tick>&& ticks) const {
 }
 
 void Cleaner::winsorize_prices(vector<CleanedTick>& ticks) const {
-    vector<double> prices;
-    prices.reserve(ticks.size());
-    for (const auto& t : ticks) prices.push_back(t.price);
+    if (cfg_.winsorize_quantile <= 0.0) return;
 
-    sort(prices.begin(), prices.end());
-    size_t n = prices.size();
-    double lower = prices[static_cast<size_t>(cfg_.winsorize_quantile * n)];
-    double upper = prices[static_cast<size_t>((1.0 - cfg_.winsorize_quantile) * n)];
+    // Winsorize on log-prices so the bounds are multiplicative and
+    // scale-invariant across long price histories.
+    vector<double> log_prices;
+    log_prices.reserve(ticks.size());
+    for (const auto& t : ticks) {
+        log_prices.push_back(t.price > 0.0 ? log(t.price) : 0.0);
+    }
+
+    sort(log_prices.begin(), log_prices.end());
+    size_t n = log_prices.size();
+    double lower_log = log_prices[static_cast<size_t>(cfg_.winsorize_quantile * n)];
+    double upper_log = log_prices[static_cast<size_t>((1.0 - cfg_.winsorize_quantile) * n)];
+    double lower = exp(lower_log);
+    double upper = exp(upper_log);
 
     for_each(execution::par_unseq, ticks.begin(), ticks.end(),
         [lower, upper](CleanedTick& t) {
@@ -57,23 +65,47 @@ void Cleaner::winsorize_prices(vector<CleanedTick>& ticks) const {
 }
 
 void Cleaner::flag_mad_outliers(vector<CleanedTick>& ticks) const {
-    vector<double> prices(ticks.size());
-    for (size_t i = 0; i < ticks.size(); ++i) prices[i] = ticks[i].price;
+    if (ticks.size() < 2) return;
 
-    nth_element(prices.begin(), prices.begin() + prices.size() / 2, prices.end());
-    double median = prices[prices.size() / 2];
+    // Compute log-returns so the statistic is scale-invariant.  This avoids
+    // flagging all modern prices as outliers when a symbol has appreciated
+    // over decades (e.g. daily close data from Yahoo Finance MAX history).
+    vector<double> log_rets;
+    log_rets.reserve(ticks.size());
+    double prev_price = ticks.front().price;
+    for (size_t i = 1; i < ticks.size(); ++i) {
+        double curr = ticks[i].price;
+        if (prev_price > 0.0 && curr > 0.0) {
+            log_rets.push_back(log(curr / prev_price));
+        }
+        prev_price = curr;
+    }
+    if (log_rets.empty()) return;
 
-    vector<double> abs_devs(ticks.size());
-    transform(execution::par_unseq, prices.begin(), prices.end(), abs_devs.begin(),
-        [median](double p) { return abs(p - median); });
+    auto mid = log_rets.begin() + log_rets.size() / 2;
+    nth_element(log_rets.begin(), mid, log_rets.end());
+    double median = *mid;
+
+    vector<double> abs_devs(log_rets.size());
+    transform(execution::par_unseq, log_rets.begin(), log_rets.end(), abs_devs.begin(),
+        [median](double lr) { return abs(lr - median); });
     nth_element(abs_devs.begin(), abs_devs.begin() + abs_devs.size() / 2, abs_devs.end());
     double mad = abs_devs[abs_devs.size() / 2];
     double threshold = cfg_.mad_threshold * 1.4826 * mad;
 
-    for_each(execution::par_unseq, ticks.begin(), ticks.end(),
-        [median, threshold](CleanedTick& t) {
-            if (abs(t.price - median) > threshold) t.outlier = true;
-        });
+    // Mark the *later* tick of each extreme log-return pair as the outlier.
+    prev_price = ticks.front().price;
+    size_t ret_idx = 0;
+    for (size_t i = 1; i < ticks.size(); ++i) {
+        double curr = ticks[i].price;
+        if (prev_price > 0.0 && curr > 0.0 && ret_idx < log_rets.size()) {
+            if (abs(log_rets[ret_idx] - median) > threshold) {
+                ticks[i].outlier = true;
+            }
+            ++ret_idx;
+        }
+        prev_price = curr;
+    }
 }
 
 void Cleaner::flag_jump_outliers(vector<CleanedTick>& ticks) const {

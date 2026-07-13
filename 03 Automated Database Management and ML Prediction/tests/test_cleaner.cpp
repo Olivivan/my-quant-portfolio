@@ -6,8 +6,8 @@ using namespace qp;
 
 TEST(Cleaner, FlagsJumpOutlier) {
     etl::CleaningConfig cfg{
-        .winsorize_quantile = 0.01,
-        .mad_threshold = 100.0, // disable MAD to isolate jump
+        .winsorize_quantile = 0.0, // disable winsorize
+        .mad_threshold = 100.0,    // disable MAD to isolate jump
         .max_price_jump_pct = 0.05
     };
     etl::Cleaner cleaner(cfg);

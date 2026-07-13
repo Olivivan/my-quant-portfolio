@@ -9,7 +9,7 @@ Yahoo Finance OHLCV
         │
         ▼
 ┌─────────────────────────────┐
-│   Python fetch_yahoo.py     │  <- real 1-minute data, top-10 US equities
+│   Python fetch_yahoo.py     │  <- daily close prices, MAX history, top-10 US equities
 └─────────────────────────────┘
         │
         ▼
@@ -100,10 +100,10 @@ This hybrid minimizes tool licensing and maintenance costs without sacrificing p
    .\scripts\run_pipeline_yahoo.ps1
    ```
 
-   This script: fetches 7-day 1-minute OHLCV for the top-10 universe from
-   Yahoo Finance, trains a LightGBM direction model, exports it to ONNX, then
-   loops through each symbol running ETL → features → inference one ticker at
-   a time.
+   This script: fetches the full available daily history (period=MAX,
+   interval=1d) for the top-10 universe from Yahoo Finance, trains a LightGBM
+   direction model, exports it to ONNX, then loops through each symbol running
+   ETL → features → inference one ticker at a time.
 
 5. Run a single stage for one symbol:
 

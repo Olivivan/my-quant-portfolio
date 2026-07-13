@@ -1,11 +1,9 @@
-"""Fetch real OHLCV data from Yahoo Finance and emit tick-like CSVs.
+"""Fetch daily close prices from Yahoo Finance and emit tick-like CSVs.
 
-Yahoo Finance does not provide true tick data for free, so we download the
-finest available granularity (1-minute when available, otherwise daily) and
-expand each OHLCV bar into a small number of synthetic trade records that
-preserve the bar's open, high, low, close and volume. This lets the existing
-C++ ETL pipeline ingest real market prices while keeping its tick-oriented
-schema unchanged.
+Data is downloaded from the ticker history page using period=MAX and
+interval=1d.  Because the C++ ETL pipeline is tick-oriented, each daily row
+is emitted as a single synthetic trade record at the closing price.  This
+provides the longest available historical daily close series for each symbol.
 """
 
 import argparse
@@ -39,9 +37,9 @@ DEFAULT_TOP_TEN = [
 ]
 
 
-def download_ohlcv(symbol: str, period: str = "7d", interval: str = "1m") -> pd.DataFrame:
-    """Download OHLCV from Yahoo Finance."""
-    logger.info("Downloading %s (%s, %s)", symbol, period, interval)
+def download_ohlcv(symbol: str, period: str = "max", interval: str = "1d") -> pd.DataFrame:
+    """Download daily OHLCV from Yahoo Finance with the requested period."""
+    logger.info("Downloading %s (period=%s, interval=%s)", symbol, period, interval)
     ticker = yf.Ticker(symbol)
     df = ticker.history(period=period, interval=interval, auto_adjust=True)
     if df.empty:
@@ -61,39 +59,28 @@ def download_ohlcv(symbol: str, period: str = "7d", interval: str = "1m") -> pd.
 
 
 def bars_to_ticks(df: pd.DataFrame, symbol: str) -> pd.DataFrame:
-    """Expand each OHLCV bar into a few tick records.
+    """Expand each daily OHLCV bar into a single close-price tick.
 
-    We emit up to 4 ticks per bar (open, high, low, close) and scale the
-    bar volume across them. This is a pragmatic approximation of trade flow
-    when true tick data is not available.
+    The closing price is used as the representative trade price for the day.
+    Volume is attached to that single synthetic print.  This matches the
+    requirement to use daily closed prices from Yahoo Finance history.
     """
     rows = []
     for _, bar in df.iterrows():
-        volume = max(bar.get("volume", 0.0), 0.0)
-        # Split volume across the four synthetic prints.
-        sizes = [volume * 0.25] * 4
-        ticks = [
-            (bar["date"], bar["open"], sizes[0], "buy"),
-            (bar["date"], bar["high"], sizes[1], "buy"),
-            (bar["date"], bar["low"], sizes[2], "sell"),
-            (bar["date"], bar["close"], sizes[3], "sell"),
-        ]
-        # Slightly stagger timestamps so the cleaner does not collapse them.
-        for offset_ms, (ts, price, size, side) in enumerate(ticks):
-            rows.append(
-                {
-                    "time": ts + pd.Timedelta(milliseconds=offset_ms * 10),
-                    "symbol": symbol,
-                    "price": round(price, 4),
-                    "size": round(max(size, 1.0), 2),
-                    "side": 1 if side == "buy" else -1,
-                    "source": "yahoo_finance",
-                }
-            )
+        rows.append(
+            {
+                "time": bar["date"],
+                "symbol": symbol,
+                "price": round(bar["close"], 4),
+                "size": round(max(bar.get("volume", 0.0), 1.0), 2),
+                "side": 1,
+                "source": "yahoo_finance",
+            }
+        )
     return pd.DataFrame(rows)
 
 
-def fetch(symbols, output_dir: Path, period: str = "7d", interval: str = "1m"):
+def fetch(symbols, output_dir: Path, period: str = "max", interval: str = "1d"):
     output_dir.mkdir(parents=True, exist_ok=True)
     for sym in symbols:
         df = download_ohlcv(sym, period=period, interval=interval)
@@ -109,8 +96,8 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--symbols", nargs="+", default=DEFAULT_TOP_TEN)
     parser.add_argument("--output-dir", default="data/raw")
-    parser.add_argument("--period", default="7d")
-    parser.add_argument("--interval", default="1m")
+    parser.add_argument("--period", default="max")
+    parser.add_argument("--interval", default="1d")
     args = parser.parse_args()
 
     fetch(args.symbols, Path(args.output_dir), args.period, args.interval)

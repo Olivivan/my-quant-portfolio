@@ -38,6 +38,9 @@ class TimescaleLoader:
 
         df = pd.read_sql(query, conn, params=params, parse_dates=["time"])
         conn.close()
+        # PostgreSQL TIMESTAMPTZ can produce a timezone that crashes pandas
+        # sort_index in some versions.  Normalize to naive UTC for modeling.
+        df["time"] = df["time"].dt.tz_localize(None)
         df.set_index("time", inplace=True)
         logger.info("Loaded %d bars for %s", len(df), symbol)
         return df

@@ -2,7 +2,7 @@
 $ErrorActionPreference = "Stop"
 $root = $PSScriptRoot | Split-Path -Parent
 
-# 1. Start infrastructure and fetch real Yahoo Finance data for the top ten.
+# 1. Start infrastructure and fetch full daily Yahoo Finance history for the top ten.
 & "$PSScriptRoot\start_infra.ps1"
 Start-Sleep -Seconds 3
 & "$PSScriptRoot\fetch_yahoo_data.ps1"
