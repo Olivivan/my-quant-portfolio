@@ -1,0 +1,60 @@
+{
+  "database": {
+    "host": "localhost",
+    "port": 5432,
+    "dbname": "quantdb",
+    "user": "quant",
+    "password": "quantpass",
+    "connection_pool_size": 8
+  },
+  "redis": {
+    "host": "localhost",
+    "port": 6379
+  },
+  "ingestion": {
+    "raw_data_dir": "data/raw",
+    "clean_data_dir": "data/clean",
+    "parquet_output_dir": "data/parquet",
+    "symbols": ["AAPL", "MSFT", "GOOGL", "TSLA"],
+    "default_bar_interval_sec": 60,
+    "thread_pool_size": 4,
+    "batch_insert_size": 10000
+  },
+  "etl": {
+    "outlier_method": "winsorize",
+    "winsorize_quantile": 0.01,
+    "mad_threshold": 5.0,
+    "max_price_jump_pct": 0.05,
+    "impute_method": "forward_fill"
+  },
+  "features": {
+    "lookback_windows": [5, 10, 20, 50],
+    "rsi_period": 14,
+    "macd_fast": 12,
+    "macd_slow": 26,
+    "macd_signal": 9,
+    "bb_period": 20,
+    "bb_std": 2.0,
+    "target_horizon_bars": 5,
+    "target_threshold": 0.001
+  },
+  "ml": {
+    "model_type": "lightgbm",
+    "feature_selection": "permutation",
+    "cv_folds": 5,
+    "embargo_pct": 0.02,
+    "random_state": 42,
+    "cost_per_trade_bps": 1.0,
+    "onnx_output_path": "models/lgbm_direction.onnx"
+  },
+  "inference": {
+    "model_name": "lgbm_direction",
+    "intra_op_threads": 4,
+    "inter_op_threads": 2,
+    "batch_size": 128
+  },
+  "logging": {
+    "level": "info",
+    "file": "logs/pipeline.log"
+  }
+}

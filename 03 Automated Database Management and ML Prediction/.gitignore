@@ -1,0 +1,28 @@
+# Build artifacts
+build/
+*.exe
+*.dll
+*.lib
+*.pdb
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+*.egg-info/
+.pytest_cache/
+
+# Data / models
+data/
+models/
+logs/
+*.parquet
+*.csv
+
+# Docker
+.env
+
+# IDE
+.vscode/settings.json
+.idea/
+*.user

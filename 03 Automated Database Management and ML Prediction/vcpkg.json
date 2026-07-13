@@ -1,0 +1,15 @@
+{
+  "name": "quant-pipeline",
+  "version": "1.0.0",
+  "description": "C++23 quant ETL/feature/inference pipeline. ONNX Runtime and libpqxx are provided as prebuilt/system libraries to avoid long vcpkg source builds.",
+  "dependencies": [
+    "arrow",
+    "fmt",
+    "spdlog",
+    "tbb",
+    "xsimd",
+    "gtest",
+    "nlohmann-json",
+    "hiredis"
+  ]
+}
